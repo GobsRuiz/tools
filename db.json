@@ -1,0 +1,375 @@
+{
+    "accounts":  [
+                     {
+                         "bank":  "inter",
+                         "label":  "Inter Principal",
+                         "type":  "bank",
+                         "balance_cents":  4950000,
+                         "card_closing_day":  25,
+                         "card_due_day":  31,
+                         "id":  1
+                     },
+                     {
+                         "bank":  "nubank",
+                         "label":  "Nubank Principal",
+                         "type":  "bank",
+                         "balance_cents":  24889,
+                         "card_closing_day":  28,
+                         "card_due_day":  3,
+                         "id":  2
+                     },
+                     {
+                         "bank":  "master",
+                         "label":  "Master Principal",
+                         "type":  "bank",
+                         "balance_cents":  1000000,
+                         "card_closing_day":  27,
+                         "card_due_day":  4,
+                         "id":  3
+                     }
+                 ],
+    "transactions":  [
+                         {
+                             "id":  "e1998ac7-b877-4895-8d0a-3caf4ea7f7e3",
+                             "accountId":  1,
+                             "date":  "2026-02-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  1,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "e95aba71-7d7c-4be9-9bb6-5c32ff37a5e5",
+                             "accountId":  1,
+                             "date":  "2026-03-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  2,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "4347a7ba-f5c0-4d92-92fb-18e6eab9a649",
+                             "accountId":  1,
+                             "date":  "2026-04-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  3,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "bdeff6d8-5319-4bc7-8ba7-918461926c82",
+                             "accountId":  1,
+                             "date":  "2026-05-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  4,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "9565ffe2-7767-4a20-bbbd-bbaf16ad6559",
+                             "accountId":  1,
+                             "date":  "2026-06-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  5,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "ef78e911-36ac-4cc3-8f98-f0a37c66aa2a",
+                             "accountId":  1,
+                             "date":  "2026-07-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  6,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "77d2313d-a539-4d55-971e-948baa23697e",
+                             "accountId":  1,
+                             "date":  "2026-08-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  7,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "4274765f-193f-4cc7-89cd-e44442f977d6",
+                             "accountId":  1,
+                             "date":  "2026-09-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  8,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "c9641ee6-1c90-471f-bf2b-5909d70e57aa",
+                             "accountId":  1,
+                             "date":  "2026-10-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  9,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "4bd69ce3-1146-4c61-a2c8-c7dd5ff7073d",
+                             "accountId":  1,
+                             "date":  "2026-11-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  10,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "b56543eb-6010-452f-8ed0-9e6114e6e620",
+                             "accountId":  1,
+                             "date":  "2026-12-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  11,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "abb7c8ef-5d75-4fa0-981d-ba4b71a98999",
+                             "accountId":  1,
+                             "date":  "2027-01-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -62500,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
+                                                 "total":  12,
+                                                 "index":  12,
+                                                 "product":  "Geladeira"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "5f485d38-9412-491d-a533-11ac74b8a895",
+                             "accountId":  2,
+                             "date":  "2026-02-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -25111,
+                             "paid":  true,
+                             "installment":  {
+                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
+                                                 "total":  5,
+                                                 "index":  1,
+                                                 "product":  "Fogão"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "b3d2a21c-24ed-45d2-9cc9-608b86248d40",
+                             "accountId":  2,
+                             "date":  "2026-03-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -25111,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
+                                                 "total":  5,
+                                                 "index":  2,
+                                                 "product":  "Fogão"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "9cb27304-92db-4a07-8d5b-c85766f8372d",
+                             "accountId":  2,
+                             "date":  "2026-04-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -25111,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
+                                                 "total":  5,
+                                                 "index":  3,
+                                                 "product":  "Fogão"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "fd4ae54a-95f5-4b0b-8053-f72aef269004",
+                             "accountId":  2,
+                             "date":  "2026-05-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -25111,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
+                                                 "total":  5,
+                                                 "index":  4,
+                                                 "product":  "Fogão"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "id":  "279b3663-7ec7-4d4d-86ea-1b6f01d75086",
+                             "accountId":  2,
+                             "date":  "2026-06-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -25111,
+                             "paid":  false,
+                             "installment":  {
+                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
+                                                 "total":  5,
+                                                 "index":  5,
+                                                 "product":  "Fogão"
+                                             },
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "accountId":  1,
+                             "date":  "2026-02-27",
+                             "type":  "expense",
+                             "payment_method":  "debit",
+                             "amount_cents":  -50000,
+                             "description":  "PIX Lulu",
+                             "paid":  true,
+                             "installment":  null,
+                             "id":  "ae21b8c4-dcb6-4acc-9301-775e6e879934",
+                             "createdAt":  "2026-02-27"
+                         },
+                         {
+                             "accountId":  1,
+                             "date":  "2026-02-27",
+                             "type":  "expense",
+                             "payment_method":  "credit",
+                             "amount_cents":  -150000,
+                             "description":  "Mercado",
+                             "paid":  false,
+                             "installment":  null,
+                             "id":  "c5a4fc23-83ec-4f16-ade0-d9c05cd6ad50",
+                             "createdAt":  "2026-02-27"
+                         }
+                     ],
+    "recurrents":  [
+
+                   ],
+    "investment_positions":  [
+                                 {
+                                     "accountId":  1,
+                                     "bucket":  "variable",
+                                     "investment_type":  "fii",
+                                     "asset_code":  "MXRF11",
+                                     "is_active":  true,
+                                     "invested_cents":  0,
+                                     "id":  "a130eea6-06f4-43d3-baeb-fae7731c21e0",
+                                     "quantity_total":  0
+                                 },
+                                 {
+                                     "accountId":  3,
+                                     "bucket":  "fixed",
+                                     "investment_type":  "caixinha",
+                                     "asset_code":  "CAIXINHA",
+                                     "name":  "Dinheiro Guardado",
+                                     "metadata":  {
+                                                      "issuer":  "Master",
+                                                      "indexer":  "CDI",
+                                                      "rate_mode":  "pct_cdi",
+                                                      "rate_percent":  120
+                                                  },
+                                     "is_active":  true,
+                                     "invested_cents":  0,
+                                     "id":  "59769965-3de7-4e49-ad93-97fd88a25929",
+                                     "principal_cents":  0,
+                                     "current_value_cents":  0
+                                 },
+                                 {
+                                     "accountId":  1,
+                                     "bucket":  "variable",
+                                     "investment_type":  "fii",
+                                     "asset_code":  "SCX11",
+                                     "is_active":  true,
+                                     "invested_cents":  0,
+                                     "id":  "582f75e4-7ae6-42a5-b99a-2f3f491747fb",
+                                     "quantity_total":  0
+                                 }
+                             ],
+    "investment_events":  [
+
+                          ]
+}

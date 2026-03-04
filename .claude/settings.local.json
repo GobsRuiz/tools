@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(\"c:/MyFiles/Programming/Me/financeiro/client/app/pages/index.vue\":*)",
+      "Bash(\"c:/MyFiles/Programming/Me/financeiro/electron/main.js\":*)",
+      "WebFetch(domain:ui.nuxt.com)",
+      "WebFetch(domain:www.shadcn-vue.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:radix.shadcn-vue.com)",
+      "WebFetch(domain:shadcn-vue.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:nuxt.com)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:app.unpkg.com)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npm view unplugin-auto-import versions --json)",
+      "Bash(npm view unplugin-auto-import@21.0.0 peerDependencies)",
+      "Bash(npm view unplugin-auto-import@20.0.0 peerDependencies)",
+      "Bash(npx vitest run --reporter=verbose)",
+      "Bash(npm view vitest versions --json)",
+      "Bash(npm view vitest dist-tags)"
+    ]
+  }
+}

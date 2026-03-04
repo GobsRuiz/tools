@@ -1,0 +1,46 @@
+{
+  "name": "financeiro-electron",
+  "version": "1.0.0",
+  "description": "App financeiro pessoal desktop",
+  "author": "Financeiro",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.financeiro.app",
+    "productName": "Financeiro",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "db-handler.js",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../db.json",
+        "to": "db.json"
+      },
+      {
+        "from": "../client/.output/public",
+        "to": "public"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
