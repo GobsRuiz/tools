@@ -105,7 +105,7 @@ defineExpose({
           </TabsTrigger>
         </TabsList>
 
-        <!-- �?�?�? TAB TRANSAÇÕES �?�?�? -->
+        <!-- TAB TRANSACOES -->
         <TabsContent value="transacoes">
           <!-- Filtros Transações -->
           <Collapsible v-model:open="txFiltersOpen" class="mb-4">
@@ -292,7 +292,7 @@ defineExpose({
           </p>
         </TabsContent>
 
-        <!-- �?�?�? TAB RECORRENTES �?�?�? -->
+        <!-- TAB RECORRENTES -->
         <TabsContent value="recorrentes">
           <!-- Filtros Recorrentes -->
           <Collapsible v-model:open="recFiltersOpen" class="mb-4">
@@ -451,7 +451,7 @@ defineExpose({
           </p>
         </TabsContent>
 
-        <!-- �?�?�? TAB INVESTIMENTOS �?�?�? -->
+        <!-- TAB INVESTIMENTOS -->
         <TabsContent value="investimentos">
           <!-- Filtros Investimentos -->
           <Collapsible v-model:open="invFiltersOpen" class="mb-4">

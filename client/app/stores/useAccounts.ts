@@ -88,7 +88,7 @@ export const useAccountsStore = defineStore('accounts', () => {
 
     try {
       const account = accounts.value.find(a => a.id === accountId)
-      if (!account) throw new Error(`Conta ${accountId} n?o encontrada`)
+      if (!account) throw new Error(`Conta ${accountId} não encontrada`)
 
       const newBalance = account.balance_cents + deltaCents
       await apiPatch(`/accounts/${accountId}`, { balance_cents: newBalance })

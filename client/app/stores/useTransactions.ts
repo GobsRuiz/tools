@@ -257,35 +257,54 @@ export const useTransactionsStore = defineStore('transactions', () => {
     const regularInstallmentsTotal = base.installmentAmountCents * base.totalInstallments
     const roundingDiffCents = base.totalAmountCents - regularInstallmentsTotal
 
-    for (let i = 1; i <= base.totalInstallments; i++) {
-      const installmentDate = i === 1 ? base.date : addMonths(base.date, i - 1)
-      // Crédito: todas as parcelas pendentes (acumula na fatura)
-      // Débito: só 1ª parcela paga, demais pendentes
-      const isPaid = isCredit ? false : (i === 1)
-      // Absorve diferença de arredondamento na última parcela para fechar o total.
-      const installmentAmountCents = i === base.totalInstallments
-        ? base.installmentAmountCents + roundingDiffCents
-        : base.installmentAmountCents
+    try {
+      for (let i = 1; i <= base.totalInstallments; i++) {
+        const installmentDate = i === 1 ? base.date : addMonths(base.date, i - 1)
+        // Crédito: todas as parcelas pendentes (acumula na fatura)
+        // Débito: só 1ª parcela paga, demais pendentes
+        const isPaid = isCredit ? false : (i === 1)
+        // Absorve diferença de arredondamento na última parcela para fechar o total.
+        const installmentAmountCents = i === base.totalInstallments
+          ? base.installmentAmountCents + roundingDiffCents
+          : base.installmentAmountCents
 
-      const tx = await apiPost<Transaction>('/transactions', {
-        id: uuid(),
-        accountId: base.accountId,
-        date: installmentDate,
-        type: base.type,
-        payment_method: base.payment_method,
-        amount_cents: installmentAmountCents,
-        description: base.description,
-        paid: isPaid,
-        installment: {
-          parentId,
-          total: base.totalInstallments,
-          index: i,
-          product: base.product,
-        },
-        createdAt: nowISO(),
+        const tx = await apiPost<Transaction>('/transactions', {
+          id: uuid(),
+          accountId: base.accountId,
+          date: installmentDate,
+          type: base.type,
+          payment_method: base.payment_method,
+          amount_cents: installmentAmountCents,
+          description: base.description,
+          paid: isPaid,
+          installment: {
+            parentId,
+            total: base.totalInstallments,
+            index: i,
+            product: base.product,
+          },
+          createdAt: nowISO(),
+        })
+        created.push(tx)
+        transactions.value.push(tx)
+      }
+    } catch (error: unknown) {
+      // Rollback das parcelas ja criadas antes da falha
+      let rollbackApplied = true
+      await Promise.all(created.map(async (createdTx) => {
+        try {
+          await apiDelete(`/transactions/${createdTx.id}`)
+        } catch {
+          rollbackApplied = false
+        }
+      }))
+      transactions.value = transactions.value.filter(t => !created.some(c => c.id === t.id))
+
+      throw createAtomicOperationError({
+        stage: 'create_installments',
+        message: getErrorMessage(error, 'Falha ao criar parcelas.'),
+        rollbackApplied,
       })
-      created.push(tx)
-      transactions.value.push(tx)
     }
 
     // Ajustar saldo somente se débito (1ª parcela paga imediatamente)
@@ -556,13 +575,31 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
     if (!txSnapshot) return
 
-    const accountsStore = useAccountsStore()
     const appliedDeltas = collectAppliedAccountDeltas(txSnapshot)
     const label = txSnapshot.description || (txSnapshot.type === 'transfer' ? 'Transferencia' : 'Transacao')
 
+    const reversalDeltas = new Map<number, number>()
     for (const [accountId, delta] of appliedDeltas) {
-      if (delta === 0) continue
-      await accountsStore.adjustBalance(accountId, -delta, `Estorno exclusao - ${label}`)
+      addAccountDelta(reversalDeltas, accountId, -delta)
+    }
+
+    try {
+      await applyDeltasWithCompensation(reversalDeltas, () => `Estorno exclusao - ${label}`)
+    } catch (error: unknown) {
+      let rollbackApplied = false
+      try {
+        await apiPost('/transactions', txSnapshot)
+        transactions.value.push(txSnapshot)
+        rollbackApplied = true
+      } catch {
+        rollbackApplied = false
+      }
+
+      throw createAtomicOperationError({
+        stage: 'reverse_balance',
+        message: getErrorMessage(error, 'Falha ao reverter saldo na exclusao da transacao.'),
+        rollbackApplied,
+      })
     }
   }
 

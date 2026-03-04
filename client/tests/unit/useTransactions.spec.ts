@@ -1412,6 +1412,105 @@ describe('useTransactionsStore', () => {
       'Transacoes de credito pagas nao podem ser excluidas.',
     )
   })
+
+  // ──────────────────────────────────────────────────────────────
+  // Bug confirmations
+  // ──────────────────────────────────────────────────────────────
+
+  describe('deleteTransaction - rollback de saldo quando adjustBalance falha', () => {
+    it('BUG: transacao some do DB mas saldo nao e revertido quando adjustBalance falha', async () => {
+      resetMockApi({
+        accounts: [{ id: 1, label: 'Conta', bank: 'Banco', balance_cents: 10000 }],
+        transactions: [
+          {
+            id: 'tx-paid',
+            accountId: 1,
+            date: '2026-02-10',
+            type: 'expense',
+            payment_method: 'debit',
+            amount_cents: -3000,
+            description: 'Compra',
+            paid: true,
+            installment: null,
+            createdAt: '2026-02-10',
+          },
+        ],
+        history: [],
+      })
+
+      const accountsStore = useAccountsStore()
+      accountsStore.accounts = [
+        { id: 1, label: 'Conta', bank: 'Banco', balance_cents: 10000 } as any,
+      ]
+      const transactionsStore = useTransactionsStore()
+      transactionsStore.transactions = cloneTransactions(getMockDb().transactions)
+
+      // Faz apiPatch falhar na chamada de adjustBalance (balance update)
+      apiPatchMock.mockRejectedValueOnce(new Error('Falha de rede simulada'))
+
+      await expect(transactionsStore.deleteTransaction('tx-paid')).rejects.toThrow()
+
+      // A transacao foi deletada do DB (bug: rollback nao foi feito)
+      const txInDb = getMockDb().transactions.find(t => t.id === 'tx-paid')
+      const txInStore = transactionsStore.transactions.find(t => t.id === 'tx-paid')
+
+      // Com o BUG: transacao some do store mas balance nao foi ajustado
+      // Com o FIX: transacao deve ser restaurada ao DB e store
+      expect(txInStore).toBeDefined() // espera que o rollback restaure a transacao
+      expect(txInDb).toBeDefined()    // espera que seja restaurada ao DB
+    })
+  })
+
+  describe('generateInstallments - rollback de parcelas parcialmente criadas', () => {
+    it('BUG: parcelas criadas antes de uma falha ficam orfas no DB', async () => {
+      resetMockApi({
+        accounts: [{ id: 1, label: 'Conta', bank: 'Banco', balance_cents: 50000 }],
+        transactions: [],
+        history: [],
+      })
+
+      const accountsStore = useAccountsStore()
+      accountsStore.accounts = [
+        { id: 1, label: 'Conta', bank: 'Banco', balance_cents: 50000 } as any,
+      ]
+      const transactionsStore = useTransactionsStore()
+      transactionsStore.transactions = []
+
+      // Deixa as 2 primeiras calls do apiPost passarem, falha na 3a
+      const originalImpl = apiPostMock.getMockImplementation()
+      let callCount = 0
+      apiPostMock.mockImplementation(async (path: string, body: unknown) => {
+        if (path === '/transactions') {
+          callCount++
+          if (callCount === 3) {
+            throw new Error('Falha na 3a parcela')
+          }
+        }
+        return originalImpl ? originalImpl(path, body) : Promise.reject(new Error('no impl'))
+      })
+
+      await expect(
+        transactionsStore.generateInstallments({
+          accountId: 1,
+          date: '2026-01-10',
+          type: 'expense',
+          payment_method: 'debit',
+          totalAmountCents: -30000,
+          installmentAmountCents: -10000,
+          product: 'Notebook',
+          totalInstallments: 3,
+        }),
+      ).rejects.toThrow()
+
+      // Com o BUG: 2 parcelas ficam orfas no DB e no store
+      // Com o FIX: todas as parcelas sao removidas ao dar rollback
+      const txsInDb = getMockDb().transactions.filter(t => t.installment?.product === 'Notebook')
+      const txsInStore = transactionsStore.transactions.filter(t => t.installment?.product === 'Notebook')
+
+      expect(txsInDb).toHaveLength(0)    // espera que rollback limpe o DB
+      expect(txsInStore).toHaveLength(0) // espera que rollback limpe o store
+    })
+  })
 })
 
 function cloneTransactions<T>(value: T): T {
