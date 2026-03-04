@@ -277,4 +277,49 @@ describe('useMovimentacoesState', () => {
     expect(deleteEventSpy).toHaveBeenCalledWith('evt-1')
     expect(toastMock.success).toHaveBeenCalled()
   })
+
+  it('confirmDelete trata erro de exclusao e sempre limpa estado de confirmacao', async () => {
+    const transactionsStore = useTransactionsStore()
+    vi.spyOn(transactionsStore, 'deleteTransaction').mockRejectedValueOnce(new Error('falha ao excluir transacao'))
+
+    const state = useMovimentacoesState({}, createEmitSpy())
+    state.deleteTarget.value = { type: 'transaction', id: 'tx-1', label: 'Conta de luz' } as any
+    state.confirmDeleteOpen.value = true
+
+    await state.confirmDelete()
+
+    expect(toastMock.error).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Erro ao excluir',
+      description: 'falha ao excluir transacao',
+    }))
+    expect(state.confirmDeleteOpen.value).toBe(false)
+    expect(state.deleteTarget.value).toBeNull()
+    expect(state.isProcessing.value).toBe(false)
+    expect(state.showDeleteInstallmentModal.value).toBe(false)
+  })
+
+  it('focusRecurrent muda para aba de recorrentes e abre visualizacao quando item existe', async () => {
+    const recurrentsStore = useRecurrentsStore()
+    recurrentsStore.recurrents = [
+      {
+        id: 'rec-focus',
+        accountId: 1,
+        kind: 'expense',
+        payment_method: 'debit',
+        notify: true,
+        name: 'Academia',
+        amount_cents: -12000,
+        frequency: 'monthly',
+        active: true,
+      },
+    ] as any
+
+    const state = useMovimentacoesState({}, createEmitSpy())
+    const focused = await state.focusRecurrent('rec-focus')
+
+    expect(focused).toBe(true)
+    expect(state.activeTab.value).toBe('recorrentes')
+    expect(state.recurrentViewDialogOpen.value).toBe(true)
+    expect(state.viewingRecurrent.value?.id).toBe('rec-focus')
+  })
 })

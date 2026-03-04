@@ -4,7 +4,7 @@ import {
   replaceDataWithBackup,
   summarizeBackup,
 } from '~/utils/export-import'
-import { apiAtomicMock, getMockDb, resetMockApi } from '../helpers/mockApi'
+import { apiAtomicMock, apiPostMock, getMockDb, resetMockApi } from '../helpers/mockApi'
 
 function makeValidBackup() {
   return {
@@ -203,6 +203,50 @@ describe('export-import relation validation', () => {
     })
 
     ;(window as any).electronAPI = previousElectronApi
+  })
+
+  it('replaceDataWithBackup falha no meio da insercao e evidencia estado parcial no modo HTTP', async () => {
+    const backup = makeValidBackup()
+    backup.data.accounts.push({
+      id: 2,
+      bank: 'Banco B',
+      label: 'Conta B',
+      type: 'bank',
+      balance_cents: 200000,
+    } as any)
+    const progress: string[] = []
+    let accountInsertions = 0
+    const originalApiPost = apiPostMock.getMockImplementation()
+    if (!originalApiPost) {
+      throw new Error('apiPostMock sem implementacao padrao para o teste')
+    }
+
+    apiPostMock.mockImplementation(async (...args: any[]) => {
+      const [path, body] = args
+      if (path === '/accounts') {
+        accountInsertions += 1
+        if (accountInsertions === 2) {
+          throw new Error('falha simulada de insercao')
+        }
+      }
+      return originalApiPost(path, body)
+    })
+
+    await expect(replaceDataWithBackup(backup.data as any, {
+      onProgress: (event) => {
+        const detail = event.collectionKey ? `:${event.collectionKey}` : ''
+        progress.push(`${event.stage}${detail}`)
+      },
+    })).rejects.toThrow('falha simulada de insercao')
+
+    const db = getMockDb()
+    expect(db.accounts.map(item => item.id)).toEqual([1])
+    expect(db.transactions).toHaveLength(0)
+    expect(db.recurrents).toHaveLength(0)
+    expect(db.investment_positions).toHaveLength(0)
+    expect(db.investment_events).toHaveLength(0)
+    expect(progress).toContain('inserting-collection:accounts')
+    expect(progress).not.toContain('completed')
   })
 
   it('summarizeBackup retorna contagem consistente por colecao', () => {

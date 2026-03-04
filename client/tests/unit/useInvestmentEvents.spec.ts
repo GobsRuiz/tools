@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useInvestmentEventsStore } from '~/stores/useInvestmentEvents'
 import { useInvestmentPositionsStore } from '~/stores/useInvestmentPositions'
-import { apiDeleteMock, getMockDb, resetMockApi } from '../helpers/mockApi'
+import { apiAtomicMock, apiDeleteMock, getMockDb, resetMockApi } from '../helpers/mockApi'
 
 describe('useInvestmentEventsStore', () => {
   beforeEach(() => {
@@ -718,5 +718,124 @@ describe('useInvestmentEventsStore', () => {
 
     expect(adjustSpy).not.toHaveBeenCalled()
     expect(eventsStore.events.map(event => event.id)).toEqual(['e-1', 'e-2'])
+  })
+
+  it('deletePositionCascade usa caminho atomico quando IPC está disponivel', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 0,
+          avg_cost_cents: 0,
+          invested_cents: 0,
+        },
+      ],
+      investment_events: [
+        { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+      ],
+    })
+
+    const previousElectronApi = (window as any).electronAPI
+    ;(window as any).electronAPI = { atomic: true }
+    apiAtomicMock.mockResolvedValueOnce({ positionDeleted: 1, eventsDeleted: 1 } as any)
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+    ] as any
+
+    const progress: Array<{ deleted: number, total: number }> = []
+    const result = await eventsStore.deletePositionCascade('pos-1', {
+      onProgress: item => progress.push(item),
+    })
+
+    expect(apiAtomicMock).toHaveBeenCalledWith('deletePositionCascade', { positionId: 'pos-1' })
+    expect(result).toEqual({ deleted: 1, total: 1 })
+    expect(positionsStore.positions).toHaveLength(0)
+    expect(eventsStore.events).toHaveLength(0)
+    expect(progress).toEqual([{ deleted: 0, total: 1 }, { deleted: 1, total: 1 }])
+
+    ;(window as any).electronAPI = previousElectronApi
+  })
+
+  it('deletePositionCascade em fallback remove eventos e depois remove posicao', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 0,
+          avg_cost_cents: 0,
+          invested_cents: 0,
+        },
+      ],
+      investment_events: [
+        { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+        { id: 'e-2', positionId: 'pos-1', accountId: 1, date: '2026-01-02', event_type: 'buy', amount_cents: 1000 },
+      ],
+    })
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+      { id: 'e-2', positionId: 'pos-1', accountId: 1, date: '2026-01-02', event_type: 'buy', amount_cents: 1000 },
+    ] as any
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 } as any,
+    ]
+
+    const deletePositionSpy = vi.spyOn(positionsStore, 'deletePosition')
+    const result = await eventsStore.deletePositionCascade('pos-1')
+
+    expect(result).toEqual({ deleted: 2, total: 2 })
+    expect(deletePositionSpy).toHaveBeenCalledWith('pos-1')
+    expect(eventsStore.events).toHaveLength(0)
+    expect(positionsStore.positions).toHaveLength(0)
   })
 })

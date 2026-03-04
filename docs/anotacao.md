@@ -1,4 +1,4 @@
-# Para o futuro
+﻿# Para o futuro
 
-- Separar o financeiro em modulo para permitir novos modulos.
-- Implementar criacao de alertas.
+- Separar o financeiro em módulo para permitir novos módulos.
+- Implementar criação de alertas.

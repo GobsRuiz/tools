@@ -404,5 +404,37 @@ describe('useAlerts', () => {
       expect(closing?.amountCents).toBe(15000)
     })
   })
+
+  describe('loadAlertSources', () => {
+    it('carrega fontes de alerta chamando os 3 stores', async () => {
+      const accountsStore = useAccountsStore()
+      const transactionsStore = useTransactionsStore()
+      const recurrentsStore = useRecurrentsStore()
+
+      const loadAccountsSpy = vi.spyOn(accountsStore, 'loadAccounts').mockResolvedValue(undefined as any)
+      const loadTransactionsSpy = vi.spyOn(transactionsStore, 'loadTransactions').mockResolvedValue(undefined as any)
+      const loadRecurrentsSpy = vi.spyOn(recurrentsStore, 'loadRecurrents').mockResolvedValue(undefined as any)
+
+      const { loadAlertSources } = useAlerts()
+      await loadAlertSources()
+
+      expect(loadAccountsSpy).toHaveBeenCalledTimes(1)
+      expect(loadTransactionsSpy).toHaveBeenCalledTimes(1)
+      expect(loadRecurrentsSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('propaga erro quando uma das fontes falha', async () => {
+      const accountsStore = useAccountsStore()
+      const transactionsStore = useTransactionsStore()
+      const recurrentsStore = useRecurrentsStore()
+
+      vi.spyOn(accountsStore, 'loadAccounts').mockResolvedValue(undefined as any)
+      vi.spyOn(transactionsStore, 'loadTransactions').mockRejectedValueOnce(new Error('falha tx'))
+      vi.spyOn(recurrentsStore, 'loadRecurrents').mockResolvedValue(undefined as any)
+
+      const { loadAlertSources } = useAlerts()
+      await expect(loadAlertSources()).rejects.toThrow('falha tx')
+    })
+  })
 })
 

@@ -163,4 +163,45 @@ describe('useDashboardData', () => {
     expect(dashboard.investmentEvolutionPoints.value.length).toBeGreaterThanOrEqual(4)
     expect(dashboard.investmentEvolutionPoints.value.at(-1)?.valueCents).toBe(1800)
   })
+
+  it('helpers de exibicao lidam com dados incompletos/legados sem quebrar', () => {
+    const accountsStore = useAccountsStore()
+    const transactionsStore = useTransactionsStore()
+    const recurrentsStore = useRecurrentsStore()
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+
+    accountsStore.accounts = [{ id: 1, label: 'Conta Principal', bank: 'Banco', type: 'bank', balance_cents: 10000 } as any]
+    transactionsStore.transactions = [
+      {
+        id: 'tx-legacy',
+        accountId: 1,
+        date: '2026-03-05',
+        type: 'expense',
+        amount_cents: -1000,
+        description: '',
+        paid: false,
+        installment: null,
+      },
+    ] as any
+    recurrentsStore.recurrents = []
+    positionsStore.positions = [{ id: 'pos-1', accountId: 1, asset_code: '', name: '', invested_cents: 0 } as any]
+    eventsStore.events = [{ id: 'e-1', positionId: 'missing', date: '2026-03-05', event_type: 'sell', amount_cents: 500 } as any]
+
+    const selectedMonth = ref('2026-03')
+    const period = ref<'month' | 'year' | 'all'>('month')
+    const dashboard = useDashboardData(selectedMonth, period)
+
+    expect(dashboard.getAccountLabel(999)).toBe('Conta')
+    expect(dashboard.investmentPositionLabel('missing')).toBe('Posicao')
+    expect(dashboard.investmentEventTypeLabel('withdrawal')).toBe('Resgate')
+    expect(dashboard.investmentEventAmountClass({ event_type: 'sell' } as any)).toBe('text-red-500')
+    expect(dashboard.investmentEventSignedCents({ event_type: 'sell', amount_cents: 500 } as any)).toBe(-500)
+
+    const tx = transactionsStore.transactions[0] as any
+    expect(dashboard.txDisplayLabel(tx)).toBe('Transacao')
+    expect(dashboard.txTypeLabel(tx)).toBe('Despesa')
+    expect(dashboard.txDateLabel('invalid-date')).toBe('invalid-date')
+    expect(dashboard.shortDateLabel('invalid-date')).toBe('invalid-date')
+  })
 })

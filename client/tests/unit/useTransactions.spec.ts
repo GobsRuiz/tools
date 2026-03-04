@@ -185,6 +185,93 @@ describe('useTransactionsStore', () => {
     expect(accountsStore.accounts[0]?.balance_cents).toBe(10000)
   })
 
+  it('updateTransaction trocando de expense paga para transfer paga recompõe origem e destino', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 9000 },
+        { id: 2, label: 'Conta B', bank: 'Banco Y', balance_cents: 5000 },
+      ],
+      transactions: [
+        {
+          id: 'tx-switch-type',
+          accountId: 1,
+          date: '2026-02-20',
+          type: 'expense',
+          payment_method: 'debit',
+          amount_cents: -1000,
+          description: 'Despesa antiga',
+          paid: true,
+          installment: null,
+          createdAt: '2026-02-20',
+        },
+      ],
+      history: [],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 9000 } as any,
+      { id: 2, label: 'Conta B', bank: 'Banco Y', balance_cents: 5000 } as any,
+    ]
+
+    const transactionsStore = useTransactionsStore()
+    transactionsStore.transactions = cloneTransactions(getMockDb().transactions)
+
+    await transactionsStore.updateTransaction('tx-switch-type', {
+      type: 'transfer',
+      destinationAccountId: 2,
+      payment_method: undefined,
+      description: 'Virou transferencia',
+    } as any)
+
+    expect(accountsStore.accounts.find(a => a.id === 1)?.balance_cents).toBe(9000)
+    expect(accountsStore.accounts.find(a => a.id === 2)?.balance_cents).toBe(6000)
+  })
+
+  it('updateTransaction trocando de transfer paga para expense paga remove impacto da conta destino', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 8000 },
+        { id: 2, label: 'Conta B', bank: 'Banco Y', balance_cents: 7000 },
+      ],
+      transactions: [
+        {
+          id: 'tx-switch-back',
+          accountId: 1,
+          destinationAccountId: 2,
+          date: '2026-02-20',
+          type: 'transfer',
+          payment_method: undefined,
+          amount_cents: -2000,
+          description: 'Transferencia antiga',
+          paid: true,
+          installment: null,
+          createdAt: '2026-02-20',
+        },
+      ],
+      history: [],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 8000 } as any,
+      { id: 2, label: 'Conta B', bank: 'Banco Y', balance_cents: 7000 } as any,
+    ]
+
+    const transactionsStore = useTransactionsStore()
+    transactionsStore.transactions = cloneTransactions(getMockDb().transactions)
+
+    await transactionsStore.updateTransaction('tx-switch-back', {
+      type: 'expense',
+      destinationAccountId: undefined,
+      payment_method: 'debit',
+      description: 'Virou despesa',
+    } as any)
+
+    expect(accountsStore.accounts.find(a => a.id === 1)?.balance_cents).toBe(8000)
+    expect(accountsStore.accounts.find(a => a.id === 2)?.balance_cents).toBe(5000)
+  })
+
   it('evita ajuste duplicado em markPaid com chamadas concorrentes', async () => {
     resetMockApi({
       accounts: [{ id: 1, label: 'Conta Principal', bank: 'Banco X', balance_cents: 10000 }],
