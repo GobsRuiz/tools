@@ -152,10 +152,10 @@ export function useDashboardData(
   })
 
   const balanceTotalCents = computed(() =>
-    accountsStore.accounts.reduce((sum: number, account: any) => sum + account.balance_cents, 0),
+    accountsStore.accounts.reduce((sum: number, account) => sum + account.balance_cents, 0),
   )
   const investedTotalCents = computed(() =>
-    investmentPositionsStore.positions.reduce((sum: number, p: any) => sum + (p.invested_cents ?? 0), 0),
+    investmentPositionsStore.positions.reduce((sum: number, p) => sum + (p.invested_cents ?? 0), 0),
   )
 
   const openCreditInvoicesByAccount = computed(() =>
@@ -743,7 +743,7 @@ export function useDashboardData(
   )
 
   function getAccountLabel(accountId: number) {
-    return accountsStore.accounts.find((account: any) => account.id === accountId)?.label ?? 'Conta'
+    return accountsStore.accounts.find(account => account.id === accountId)?.label ?? 'Conta'
   }
 
   function txDisplayLabel(tx: DashboardTx): string {

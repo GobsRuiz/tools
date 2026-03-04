@@ -16,7 +16,8 @@ import {
 } from '~/utils/investment-events'
 import { parseBRLToCents, formatCentsToBRL } from '~/utils/money'
 import { nowISO } from '~/utils/dates'
-import type { InvestmentPosition, InvestmentEvent } from '~/schemas/zod-schemas'
+import { getErrorMessage } from '~/utils/error'
+import type { InvestmentPosition, InvestmentEvent } from '~~/schemas/zod-schemas'
 
 export function useInvestmentPageState() {
   const accountsStore = useAccountsStore()
@@ -669,10 +670,10 @@ export function useInvestmentPageState() {
         await eventsStore.deleteEvent(deleteTarget.value.id)
         appToast.success({ title: 'Lancamento excluido' })
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       appToast.error({
         title: 'Erro ao excluir',
-        description: e.message || 'Não foi possível excluir',
+        description: getErrorMessage(e, 'Nao foi possivel excluir.'),
       })
     } finally {
       resetDeletePositionProgress()
@@ -858,10 +859,10 @@ export function useInvestmentPageState() {
 
       resetPositionForm()
       positionDialogOpen.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       appToast.error({
         title: editingPosition.value ? 'Erro ao atualizar ativo' : 'Erro ao criar ativo',
-        description: e.message,
+        description: getErrorMessage(e, 'Nao foi possivel salvar o ativo.'),
       })
     } finally {
       savingPosition.value = false
@@ -889,7 +890,7 @@ export function useInvestmentPageState() {
         const qty = Number(eventForm.quantity.replace(',', '.'))
         if (!Number.isFinite(qty) || qty <= 0) throw new Error('Informe a quantidade')
         if (eventForm.event_type === 'sell') {
-          const availableQty = getEffectiveAvailableQuantityForSell(position)
+          const availableQty = getEffectiveAvailableQuantityForSell(position, editingEvent.value)
           if (qty > availableQty) {
             throw new Error(`Voce possui apenas ${formatQuantityDisplay(availableQty)} cotas`)
           }
@@ -917,10 +918,10 @@ export function useInvestmentPageState() {
 
       resetEventForm()
       eventDialogOpen.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       appToast.error({
         title: editingEvent.value ? 'Erro ao atualizar lancamento' : 'Erro ao registrar lancamento',
-        description: e.message,
+        description: getErrorMessage(e, 'Nao foi possivel salvar o lancamento.'),
       })
     } finally {
       savingEvent.value = false
@@ -943,7 +944,7 @@ export function useInvestmentPageState() {
 
   return {
     // Stores (for template direct use)
-    positionsStore,
+    accountsStore, positionsStore,
     // State
     activeBucket,
     loading, refreshing,
@@ -956,6 +957,7 @@ export function useInvestmentPageState() {
     editingPosition, editingEvent,
     viewingPosition, viewingEvent,
     confirmDeleteOpen, deleteTarget, deleting,
+    savingPosition, savingEvent,
     showDeletePositionProgressModal,
     deletePositionProgressStep, deletePositionProgressLabel,
     deletePositionProgressPercent, deletePositionProgressMeta,
@@ -975,16 +977,19 @@ export function useInvestmentPageState() {
     variableTotalItems, variableTotalPages,
     variablePageStart, variablePageEnd,
     paginatedVariablePositions, submitVariableGoToPage,
+    setVariablePage,
     // Pagination — fixed
     fixedPageSize, fixedPage, fixedGoToPage,
     fixedTotalItems, fixedTotalPages,
     fixedPageStart, fixedPageEnd,
     paginatedFixedPositions, submitFixedGoToPage,
+    setFixedPage,
     // Pagination — events
     eventsPageSize, eventsPage, eventsGoToPage,
     eventsTotalItems, eventsTotalPages,
     eventsPageStart, eventsPageEnd,
     paginatedEvents, submitEventsGoToPage,
+    setEventsPage,
     // Viewing
     viewingPositionEvents, viewingPositionTimeline,
     viewingCaixinhaSummary, viewingVariableSummary,
@@ -1007,3 +1012,5 @@ export function useInvestmentPageState() {
     submitPosition, submitEvent,
   }
 }
+
+

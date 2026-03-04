@@ -1,4 +1,4 @@
-import type {} from '~/types/electron'
+﻿import type {} from '~/types/electron'
 
 const DEFAULT_BASE_URL = 'http://localhost:3011'
 
@@ -60,9 +60,7 @@ function resolveBaseUrl(): string {
     runtimeApiBase = ''
   }
 
-  const envApiBase = typeof process !== 'undefined'
-    ? process.env.NUXT_PUBLIC_API_BASE ?? ''
-    : ''
+  const envApiBase = import.meta.env?.NUXT_PUBLIC_API_BASE ?? ''
 
   const baseUrl = runtimeApiBase || envApiBase || DEFAULT_BASE_URL
   return baseUrl.replace(/\/+$/, '')
@@ -145,3 +143,4 @@ export function apiAtomic<T>(action: string, payload?: unknown): Promise<T> {
   }
   return window.electronAPI.atomic<T | IpcErrorPayload>(action, payload).then(normalizeElectronResponse)
 }
+

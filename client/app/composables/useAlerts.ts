@@ -38,6 +38,14 @@ interface InvoiceDueCandidate {
   bucket: AlertBucket
 }
 
+function hasCreditCardDays(
+  account?: { card_due_day?: number, card_closing_day?: number } | null,
+): account is { card_due_day: number, card_closing_day: number } {
+  return hasCompleteCreditCardConfig(account)
+    && Number.isInteger(account?.card_due_day)
+    && Number.isInteger(account?.card_closing_day)
+}
+
 function clampDay(year: number, monthIndexOneBased: number, day: number): number {
   const maxDay = new Date(year, monthIndexOneBased, 0).getDate()
   return Math.min(Math.max(Math.trunc(day), 1), maxDay)
@@ -117,7 +125,7 @@ export function useAlerts() {
       if (tx.paid || tx.payment_method !== 'credit') continue
 
       const account = accountById.value.get(tx.accountId)
-      if (!hasCompleteCreditCardConfig(account)) continue
+      if (!hasCreditCardDays(account)) continue
 
       const dueDate = computeCreditInvoiceDueDate(tx.date, account.card_due_day, account.card_closing_day)
       if (!dueDate) continue
@@ -236,7 +244,7 @@ export function useAlerts() {
     const items: AlertItem[] = []
 
     for (const account of accountsStore.accounts) {
-      if (!hasCompleteCreditCardConfig(account)) continue
+      if (!hasCreditCardDays(account)) continue
       const candidate = pickInvoiceDueCandidate(account.id)
       if (!candidate) continue
 
@@ -262,7 +270,7 @@ export function useAlerts() {
     const items: AlertItem[] = []
 
     for (const account of accountsStore.accounts) {
-      if (!hasCompleteCreditCardConfig(account)) continue
+      if (!hasCreditCardDays(account)) continue
       const openAmountCents = Math.abs(openCreditCycleAmountByAccount.value.get(account.id) ?? 0)
 
       const targetDate = dateForNextMonthlyOccurrence(today.value, account.card_closing_day)

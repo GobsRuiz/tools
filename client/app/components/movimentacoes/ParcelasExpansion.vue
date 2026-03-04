@@ -1,9 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import dayjs from 'dayjs'
 import { Check } from 'lucide-vue-next'
-import type { Transaction } from '~/schemas/zod-schemas'
+import type { Transaction } from '~~/schemas/zod-schemas'
 import { useAppToast } from '~/composables/useAppToast'
 import { useTransactionsStore } from '~/stores/useTransactions'
+import { getErrorMessage } from '~/utils/error'
 import { formatCentsToBRL } from '~/utils/money'
 
 const props = defineProps<{
@@ -73,10 +74,10 @@ async function togglePaid(tx: Transaction, checked: boolean | 'indeterminate') {
     }
 
     await transactionsStore.markUnpaid(tx.id)
-  } catch (e: any) {
+  } catch (e: unknown) {
     appToast.error({
       title: 'Erro ao atualizar parcela',
-      description: e?.message || 'Não foi possível atualizar o status da parcela.',
+      description: getErrorMessage(e, 'Nao foi possivel atualizar o status da parcela.'),
     })
   } finally {
     processingId.value = null
@@ -131,3 +132,5 @@ async function togglePaid(tx: Transaction, checked: boolean | 'indeterminate') {
     </div>
   </div>
 </template>
+
+

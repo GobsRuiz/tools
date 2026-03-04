@@ -1,14 +1,18 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { v4 as uuid } from 'uuid'
 import type { InvestmentEvent } from '~~/schemas/zod-schemas'
 import { createAtomicOperationError } from '~/utils/atomic-error'
 import { apiAtomic, apiGet, apiPost, apiPatch, apiDelete } from '~/utils/api'
+import { getErrorMessage } from '~/utils/error'
 import { useInvestmentPositionsStore } from './useInvestmentPositions'
 import { useAccountsStore } from './useAccounts'
 
 export const useInvestmentEventsStore = defineStore('investment-events', () => {
   const events = ref<InvestmentEvent[]>([])
+  const deletePositionCascadeInFlight = new Map<string, Promise<{ deleted: number, total: number }>>()
+  const updateEventQueue = new Map<string, Promise<void>>()
+  const deleteEventInFlight = new Map<string, Promise<void>>()
 
   function validateInvestmentEventAmount(amountCents: number) {
     if (!Number.isInteger(amountCents) || amountCents <= 0) {
@@ -61,7 +65,7 @@ export const useInvestmentEventsStore = defineStore('investment-events', () => {
       await recomputePosition(created.positionId)
       await adjustAccountForEvent(created)
       return created
-    } catch (error: any) {
+    } catch (error: unknown) {
       let rollbackApplied = false
       if (created) {
         try {
@@ -76,99 +80,130 @@ export const useInvestmentEventsStore = defineStore('investment-events', () => {
 
       throw createAtomicOperationError({
         stage: created ? 'adjust_account_for_event' : 'create_event',
-        message: error?.message || 'Falha ao registrar evento de investimento.',
+        message: getErrorMessage(error, 'Falha ao registrar evento de investimento.'),
         rollbackApplied,
       })
     }
   }
 
   async function updateEvent(id: string, patch: Partial<InvestmentEvent>) {
-    const original = events.value.find(e => e.id === id)
-    const originalSnapshot = original ? { ...original } : null
-    let updated: InvestmentEvent | null = null
+    const previous = updateEventQueue.get(id) ?? Promise.resolve()
+    let release!: () => void
+    const lock = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const currentTail = previous
+      .catch(() => undefined)
+      .then(() => lock)
 
-    assertRemovedEventFields(patch as Record<string, unknown>)
-    if (patch.amount_cents !== undefined) {
-      validateInvestmentEventAmount(patch.amount_cents)
-    }
+    updateEventQueue.set(id, currentTail)
+    await previous.catch(() => undefined)
 
     try {
-      updated = await apiPatch<InvestmentEvent>(`/investment_events/${id}`, patch)
-      const idx = events.value.findIndex(e => e.id === id)
-      if (idx !== -1) events.value[idx] = updated
+      const original = events.value.find(e => e.id === id)
+      const originalSnapshot = original ? { ...original } : null
+      let updated: InvestmentEvent | null = null
 
-      const affected = new Set<string>()
-      if (originalSnapshot) affected.add(originalSnapshot.positionId)
-      affected.add(updated.positionId)
-      for (const positionId of affected) {
-        await recomputePosition(positionId)
+      assertRemovedEventFields(patch as Record<string, unknown>)
+      if (patch.amount_cents !== undefined) {
+        validateInvestmentEventAmount(patch.amount_cents)
       }
 
-      if (originalSnapshot) await adjustAccountForEvent(originalSnapshot, true)
-      await adjustAccountForEvent(updated)
+      try {
+        updated = await apiPatch<InvestmentEvent>(`/investment_events/${id}`, patch)
+        const idx = events.value.findIndex(e => e.id === id)
+        if (idx !== -1) events.value[idx] = updated
 
-      return updated
-    } catch (error: any) {
-      let rollbackApplied = false
-      if (originalSnapshot) {
-        try {
-          await apiPatch(`/investment_events/${id}`, originalSnapshot)
-          const idx = events.value.findIndex(event => event.id === id)
-          if (idx !== -1) events.value[idx] = originalSnapshot
-          const rollbackAffected = new Set<string>([
-            originalSnapshot.positionId,
-            updated?.positionId ?? originalSnapshot.positionId,
-          ])
-          for (const positionId of rollbackAffected) {
-            await recomputePosition(positionId)
-          }
-          rollbackApplied = true
-        } catch {
-          rollbackApplied = false
+        const affected = new Set<string>()
+        if (originalSnapshot) affected.add(originalSnapshot.positionId)
+        affected.add(updated.positionId)
+        for (const positionId of affected) {
+          await recomputePosition(positionId)
         }
-      }
 
-      throw createAtomicOperationError({
-        stage: updated ? 'update_event_post_process' : 'patch_event',
-        message: error?.message || 'Falha ao atualizar evento de investimento.',
-        rollbackApplied,
-      })
+        if (originalSnapshot) await adjustAccountForEvent(originalSnapshot, true)
+        await adjustAccountForEvent(updated)
+
+        return updated
+      } catch (error: unknown) {
+        let rollbackApplied = false
+        if (originalSnapshot) {
+          try {
+            await apiPatch(`/investment_events/${id}`, originalSnapshot)
+            const idx = events.value.findIndex(event => event.id === id)
+            if (idx !== -1) events.value[idx] = originalSnapshot
+            const rollbackAffected = new Set<string>([
+              originalSnapshot.positionId,
+              updated?.positionId ?? originalSnapshot.positionId,
+            ])
+            for (const positionId of rollbackAffected) {
+              await recomputePosition(positionId)
+            }
+            rollbackApplied = true
+          } catch {
+            rollbackApplied = false
+          }
+        }
+
+        throw createAtomicOperationError({
+          stage: updated ? 'update_event_post_process' : 'patch_event',
+          message: getErrorMessage(error, 'Falha ao atualizar evento de investimento.'),
+          rollbackApplied,
+        })
+      }
+    } finally {
+      release()
+      if (updateEventQueue.get(id) === currentTail) {
+        updateEventQueue.delete(id)
+      }
     }
   }
 
   async function deleteEvent(id: string) {
-    const event = events.value.find(e => e.id === id)
-    if (!event) {
-      await apiDelete(`/investment_events/${id}`)
-      return
-    }
+    const existing = deleteEventInFlight.get(id)
+    if (existing) return existing
 
-    const snapshot = { ...event }
-    let deletedFromDb = false
-    try {
-      await apiDelete(`/investment_events/${id}`)
-      deletedFromDb = true
-      events.value = events.value.filter(e => e.id !== id)
-      await recomputePosition(snapshot.positionId)
-      await adjustAccountForEvent(snapshot, true)
-    } catch (error: any) {
-      let rollbackApplied = false
-      if (deletedFromDb) {
-        try {
-          await apiPost('/investment_events', snapshot)
-          events.value.push(snapshot)
-          await recomputePosition(snapshot.positionId)
-          rollbackApplied = true
-        } catch {
-          rollbackApplied = false
-        }
+    const operation = (async () => {
+      const event = events.value.find(e => e.id === id)
+      if (!event) {
+        await apiDelete(`/investment_events/${id}`)
+        return
       }
 
-      throw createAtomicOperationError({
-        stage: 'delete_event',
-        message: error?.message || 'Falha ao excluir evento de investimento.',
-        rollbackApplied,
-      })
+      const snapshot = { ...event }
+      let deletedFromDb = false
+      try {
+        await apiDelete(`/investment_events/${id}`)
+        deletedFromDb = true
+        events.value = events.value.filter(e => e.id !== id)
+        await recomputePosition(snapshot.positionId)
+        await adjustAccountForEvent(snapshot, true)
+      } catch (error: unknown) {
+        let rollbackApplied = false
+        if (deletedFromDb) {
+          try {
+            await apiPost('/investment_events', snapshot)
+            events.value.push(snapshot)
+            await recomputePosition(snapshot.positionId)
+            rollbackApplied = true
+          } catch {
+            rollbackApplied = false
+          }
+        }
+
+        throw createAtomicOperationError({
+          stage: 'delete_event',
+          message: getErrorMessage(error, 'Falha ao excluir evento de investimento.'),
+          rollbackApplied,
+        })
+      }
+    })()
+
+    deleteEventInFlight.set(id, operation)
+    try {
+      return await operation
+    } finally {
+      deleteEventInFlight.delete(id)
     }
   }
 
@@ -226,6 +261,10 @@ export const useInvestmentEventsStore = defineStore('investment-events', () => {
     positionId: string,
     options?: { onProgress?: (progress: { deleted: number, total: number }) => void },
   ) {
+    const existing = deletePositionCascadeInFlight.get(positionId)
+    if (existing) return existing
+
+    const operation = (async () => {
     if (canUseAtomicIpc()) {
       options?.onProgress?.({ deleted: 0, total: 1 })
       const result = await apiAtomic<{ positionDeleted: number, eventsDeleted: number }>(
@@ -252,6 +291,14 @@ export const useInvestmentEventsStore = defineStore('investment-events', () => {
     })
     await useInvestmentPositionsStore().deletePosition(positionId)
     return deletedEvents
+    })()
+
+    deletePositionCascadeInFlight.set(positionId, operation)
+    try {
+      return await operation
+    } finally {
+      deletePositionCascadeInFlight.delete(positionId)
+    }
   }
 
   async function recomputePosition(positionId: string) {
@@ -393,3 +440,4 @@ export const useInvestmentEventsStore = defineStore('investment-events', () => {
     recomputeAllPositions,
   }
 })
+

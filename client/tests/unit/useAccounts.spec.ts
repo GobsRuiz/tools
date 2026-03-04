@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAccountsStore } from '~/stores/useAccounts'
-import { apiAtomicMock, apiDeleteMock, getMockDb, resetMockApi } from '../helpers/mockApi'
+import { apiAtomicMock, apiDeleteMock, apiPatchMock, getMockDb, resetMockApi } from '../helpers/mockApi'
 
 describe('useAccountsStore', () => {
   beforeEach(() => {
@@ -24,6 +24,42 @@ describe('useAccountsStore', () => {
 
     expect(store.accounts[0]?.balance_cents).toBe(7500)
     expect(getMockDb().accounts[0]?.balance_cents).toBe(7500)
+  })
+
+  it('adjustBalance serializa concorrencia por conta e evita perda de atualizacao', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Carteira', bank: 'Banco X', balance_cents: 10000 },
+      ],
+    })
+
+    const store = useAccountsStore()
+    store.accounts = [
+      { id: 1, label: 'Carteira', bank: 'Banco X', balance_cents: 10000 } as any,
+    ]
+
+    const basePatch = apiPatchMock.getMockImplementation()
+    if (!basePatch) {
+      throw new Error('apiPatchMock sem implementacao padrao para o teste')
+    }
+
+    let firstPatchResolved = false
+    apiPatchMock.mockImplementation(async (...args: Parameters<typeof basePatch>) => {
+      if (!firstPatchResolved) {
+        firstPatchResolved = true
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+      return basePatch(...args)
+    })
+
+    await Promise.all([
+      store.adjustBalance(1, -1000, 'Ajuste 1'),
+      store.adjustBalance(1, -2000, 'Ajuste 2'),
+    ])
+
+    expect(store.accounts[0]?.balance_cents).toBe(7000)
+    expect(getMockDb().accounts[0]?.balance_cents).toBe(7000)
+    expect(apiPatchMock.mock.calls.map(([, body]) => (body as { balance_cents: number }).balance_cents)).toEqual([9000, 7000])
   })
 
   it('deleteAccount remove cascade e reporta progresso por etapa', async () => {
@@ -244,5 +280,45 @@ describe('useAccountsStore', () => {
       rollbackApplied: false,
       message: 'falha delete geral',
     })
+  })
+
+  it('deleteAccount deduplica chamadas concorrentes para a mesma conta', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta A', bank: 'Banco A', balance_cents: 1000 },
+      ],
+      transactions: [],
+      recurrents: [],
+      investment_positions: [],
+      investment_events: [],
+    })
+
+    const store = useAccountsStore()
+    store.accounts = [
+      { id: 1, label: 'Conta A', bank: 'Banco A', balance_cents: 1000 } as any,
+    ]
+
+    const baseDelete = apiDeleteMock.getMockImplementation()
+    let resolveDelete!: () => void
+    const gate = new Promise<void>((resolve) => {
+      resolveDelete = resolve
+    })
+
+    apiDeleteMock.mockImplementation(async (path: string) => {
+      if (path === '/accounts/1') {
+        await gate
+      }
+      return baseDelete?.(path) as any
+    })
+
+    const firstCall = store.deleteAccount(1)
+    const secondCall = store.deleteAccount(1)
+
+    resolveDelete()
+
+    const [firstSummary, secondSummary] = await Promise.all([firstCall, secondCall])
+    expect(firstSummary).toEqual(secondSummary)
+    expect(getMockDb().accounts).toHaveLength(0)
+    expect(apiDeleteMock.mock.calls.filter(([path]) => path === '/accounts/1')).toHaveLength(1)
   })
 })

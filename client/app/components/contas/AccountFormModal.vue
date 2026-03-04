@@ -1,9 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Save } from 'lucide-vue-next'
-import type { Account } from '~/schemas/zod-schemas'
+import type { Account } from '~~/schemas/zod-schemas'
 import { useAppToast } from '~/composables/useAppToast'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { assertValidCreditCardPair, CREDIT_CARD_BLANK_MESSAGE, CREDIT_CARD_PAIR_MESSAGE } from '~/utils/account-credit'
+import { getErrorMessage } from '~/utils/error'
 import { parseBRLToCents } from '~/utils/money'
 
 const props = defineProps<{
@@ -139,13 +140,14 @@ async function handleSubmit() {
     appToast.success({ title: isEdit.value ? 'Conta atualizada' : 'Conta criada' })
     resetForm()
     emit('saved')
-  } catch (e: any) {
-    const isCreditPairError = typeof e?.message === 'string' && e.message.includes(CREDIT_CARD_PAIR_MESSAGE)
+  } catch (e: unknown) {
+    const message = getErrorMessage(e, 'Ocorreu um erro ao salvar a conta.')
+    const isCreditPairError = message.includes(CREDIT_CARD_PAIR_MESSAGE)
     appToast.error({
       title: 'Erro ao salvar conta',
       description: isCreditPairError
         ? `${CREDIT_CARD_PAIR_MESSAGE} ${CREDIT_CARD_BLANK_MESSAGE}`
-        : (e?.message || 'Ocorreu um erro ao salvar a conta.'),
+        : message,
     })
   } finally {
     loading.value = false
@@ -190,3 +192,5 @@ async function handleSubmit() {
     </Button>
   </form>
 </template>
+
+

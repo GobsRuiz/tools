@@ -1,18 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { v4 as uuid } from 'uuid'
-import type { Transaction, Recurrent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent } from '~~/schemas/zod-schemas'
 import { assertTransactionBusinessRules } from '~~/schemas/transaction-business-rules'
 import { createAtomicOperationError } from '~/utils/atomic-error'
 import { apiGet, apiPost, apiPatch, apiDelete } from '~/utils/api'
 import { addMonths, monthKey, nowISO } from '~/utils/dates'
 import { CREDIT_CARD_BLANK_MESSAGE, CREDIT_CARD_PAIR_MESSAGE, hasCompleteCreditCardConfig } from '~/utils/account-credit'
+import { getErrorMessage } from '~/utils/error'
 import { computeCreditInvoiceCycleMonth } from '~/utils/invoice-cycle'
 import { useAccountsStore } from './useAccounts'
 
 export const useTransactionsStore = defineStore('transactions', () => {
   const transactions = ref<Transaction[]>([])
   const paymentInFlight = ref<Set<string>>(new Set())
+  const updateTransactionQueue = new Map<string, Promise<void>>()
+  const payRecurrentInFlight = new Map<string, Promise<Transaction>>()
+  const generateInstallmentsInFlight = new Map<string, Promise<Transaction[]>>()
 
   function validateTransactionBusinessRules(tx: Pick<Transaction, 'accountId' | 'destinationAccountId' | 'type' | 'payment_method' | 'amount_cents'>) {
     assertTransactionBusinessRules(tx)
@@ -91,7 +95,9 @@ export const useTransactionsStore = defineStore('transactions', () => {
       if (tx.payment_method !== 'credit') continue
 
       const account = accountById.get(tx.accountId)
+      if (!account) continue
       if (!hasCompleteCreditCardConfig(account)) continue
+      if (!Number.isInteger(account.card_closing_day)) continue
 
       const cycleMonth = computeCreditInvoiceCycleMonth(tx.date, account.card_closing_day)
       if (!cycleMonth || cycleMonth !== month) continue
@@ -109,61 +115,74 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
   /** Paga/Lanca um recorrente no mes */
   async function payRecurrent(rec: Recurrent, month: string) {
-    const existing = transactions.value.find((t) =>
-      t.recurrentId === rec.id
-      && (monthKey(t.date) === month || (typeof t.date === 'string' && t.date.slice(0, 7) === month)),
-    )
-    if (existing) return existing
+    const lockKey = `${rec.id}:${month}`
+    const existingOperation = payRecurrentInFlight.get(lockKey)
+    if (existingOperation) return existingOperation
 
-    const referenceDay = rec.due_day ?? rec.day_of_month
-    const date = resolveRecurringDate(month, referenceDay)
+    const operation = (async () => {
+      const existing = transactions.value.find((t) =>
+        t.recurrentId === rec.id
+        && (monthKey(t.date) === month || (typeof t.date === 'string' && t.date.slice(0, 7) === month)),
+      )
+      if (existing) return existing
 
-    const type: Transaction['type'] = rec.kind === 'expense' ? 'expense' : 'income'
-    const paymentMethod: Transaction['payment_method'] =
-      type === 'expense' ? (rec.payment_method ?? 'debit') : undefined
-    ensureCreditAccountConfigured(rec.accountId, paymentMethod)
-    const paid = type === 'expense' ? paymentMethod === 'debit' : true
+      const referenceDay = rec.due_day ?? rec.day_of_month
+      const date = resolveRecurringDate(month, referenceDay)
 
-    let tx: Transaction | null = null
-    try {
-      tx = await addTransaction({
-        accountId: rec.accountId,
-        date,
-        type,
-        payment_method: paymentMethod,
-        amount_cents: rec.amount_cents,
-        description: rec.description || rec.name,
-        paid,
-        installment: null,
-        recurrentId: rec.id,
-      })
+      const type: Transaction['type'] = rec.kind === 'expense' ? 'expense' : 'income'
+      const paymentMethod: Transaction['payment_method'] =
+        type === 'expense' ? (rec.payment_method ?? 'debit') : undefined
+      ensureCreditAccountConfigured(rec.accountId, paymentMethod)
+      const paid = type === 'expense' ? paymentMethod === 'debit' : true
 
-      if (paid) {
-        const deltas = collectAppliedAccountDeltas({ ...tx, paid: true })
-        await applyDeltasWithCompensation(
-          deltas,
-          () => rec.name,
-        )
-      }
+      let tx: Transaction | null = null
+      try {
+        tx = await addTransaction({
+          accountId: rec.accountId,
+          date,
+          type,
+          payment_method: paymentMethod,
+          amount_cents: rec.amount_cents,
+          description: rec.description || rec.name,
+          paid,
+          installment: null,
+          recurrentId: rec.id,
+        })
 
-      return tx
-    } catch (error: any) {
-      let rollbackApplied = false
-      if (tx) {
-        try {
-          await apiDelete(`/transactions/${tx.id}`)
-          transactions.value = transactions.value.filter(item => item.id !== tx!.id)
-          rollbackApplied = true
-        } catch {
-          rollbackApplied = false
+        if (paid) {
+          const deltas = collectAppliedAccountDeltas({ ...tx, paid: true })
+          await applyDeltasWithCompensation(
+            deltas,
+            () => rec.name,
+          )
         }
-      }
 
-      throw createAtomicOperationError({
-        stage: tx ? 'adjust_balance' : 'create_transaction',
-        message: error?.message || 'Falha ao pagar recorrente.',
-        rollbackApplied,
-      })
+        return tx
+      } catch (error: unknown) {
+        let rollbackApplied = false
+        if (tx) {
+          try {
+            await apiDelete(`/transactions/${tx.id}`)
+            transactions.value = transactions.value.filter(item => item.id !== tx!.id)
+            rollbackApplied = true
+          } catch {
+            rollbackApplied = false
+          }
+        }
+
+        throw createAtomicOperationError({
+          stage: tx ? 'adjust_balance' : 'create_transaction',
+          message: getErrorMessage(error, 'Falha ao pagar recorrente.'),
+          rollbackApplied,
+        })
+      }
+    })()
+
+    payRecurrentInFlight.set(lockKey, operation)
+    try {
+      return await operation
+    } finally {
+      payRecurrentInFlight.delete(lockKey)
     }
   }
 
@@ -196,6 +215,21 @@ export const useTransactionsStore = defineStore('transactions', () => {
     product: string
     totalInstallments: number
   }) {
+    const lockKey = JSON.stringify([
+      base.accountId,
+      base.date,
+      base.type,
+      base.payment_method ?? null,
+      base.totalAmountCents,
+      base.installmentAmountCents,
+      base.description ?? null,
+      base.product,
+      base.totalInstallments,
+    ])
+    const existingOperation = generateInstallmentsInFlight.get(lockKey)
+    if (existingOperation) return existingOperation
+
+    const operation = (async () => {
     if (!Number.isInteger(base.totalInstallments) || base.totalInstallments < 2 || base.totalInstallments > 72) {
       throw new Error('Numero de parcelas deve estar entre 2 e 72.')
     }
@@ -265,6 +299,14 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
 
     return created
+    })()
+
+    generateInstallmentsInFlight.set(lockKey, operation)
+    try {
+      return await operation
+    } finally {
+      generateInstallmentsInFlight.delete(lockKey)
+    }
   }
 
   async function markPaid(txId: string) {
@@ -284,7 +326,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
           ? `Parcela ${tx.installment.index}/${tx.installment.total} - ${tx.installment.product}`
           : tx.description || 'Transacao',
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       let rollbackApplied = false
       try {
         await apiPatch(`/transactions/${txId}`, { paid: previousPaid })
@@ -296,7 +338,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
       throw createAtomicOperationError({
         stage: 'mark_paid',
-        message: error?.message || 'Falha ao marcar transacao como paga.',
+        message: getErrorMessage(error, 'Falha ao marcar transacao como paga.'),
         rollbackApplied,
       })
     } finally {
@@ -326,7 +368,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
           ? `Estorno parcela ${tx.installment.index}/${tx.installment.total} - ${tx.installment.product}`
           : `Estorno - ${tx.description || 'Transacao'}`,
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       let rollbackApplied = false
       try {
         await apiPatch(`/transactions/${txId}`, { paid: previousPaid })
@@ -338,7 +380,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
       throw createAtomicOperationError({
         stage: 'mark_unpaid',
-        message: error?.message || 'Falha ao desfazer pagamento da transacao.',
+        message: getErrorMessage(error, 'Falha ao desfazer pagamento da transacao.'),
         rollbackApplied,
       })
     } finally {
@@ -374,53 +416,78 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
   }
 
+  async function runUpdateTransactionSerial<T>(transactionId: string, task: () => Promise<T>): Promise<T> {
+    const previous = updateTransactionQueue.get(transactionId) ?? Promise.resolve()
+    let release!: () => void
+    const lock = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const currentTail = previous
+      .catch(() => undefined)
+      .then(() => lock)
+
+    updateTransactionQueue.set(transactionId, currentTail)
+    await previous.catch(() => undefined)
+
+    try {
+      return await task()
+    } finally {
+      release()
+      if (updateTransactionQueue.get(transactionId) === currentTail) {
+        updateTransactionQueue.delete(transactionId)
+      }
+    }
+  }
+
   async function updateTransaction(id: string, patch: Partial<Transaction>) {
-    let old = transactions.value.find(t => t.id === id)
-    if (!old) {
-      old = await apiGet<Transaction>(`/transactions/${id}`)
-    }
+    return runUpdateTransactionSerial(id, async () => {
+      let old = transactions.value.find(t => t.id === id)
+      if (!old) {
+        old = await apiGet<Transaction>(`/transactions/${id}`)
+      }
 
-    const candidate: Transaction = { ...old, ...patch }
-    validateTransactionBusinessRules(candidate)
+      const candidate: Transaction = { ...old, ...patch }
+      validateTransactionBusinessRules(candidate)
 
-    const oldSnapshot = old ? snapshotTransaction(old) : null
-    const nextAccountId = patch.accountId ?? old?.accountId
-    const nextPaymentMethod = patch.payment_method ?? old?.payment_method
-    if (nextAccountId != null) {
-      ensureCreditAccountConfigured(nextAccountId, nextPaymentMethod)
-    }
+      const oldSnapshot = old ? snapshotTransaction(old) : null
+      const nextAccountId = patch.accountId ?? old?.accountId
+      const nextPaymentMethod = patch.payment_method ?? old?.payment_method
+      if (nextAccountId != null) {
+        ensureCreditAccountConfigured(nextAccountId, nextPaymentMethod)
+      }
 
-    const updated = await apiPatch<Transaction>(`/transactions/${id}`, patch)
-    const idx = transactions.value.findIndex(t => t.id === id)
-    if (idx !== -1) transactions.value[idx] = updated
+      const updated = await apiPatch<Transaction>(`/transactions/${id}`, patch)
+      const idx = transactions.value.findIndex(t => t.id === id)
+      if (idx !== -1) transactions.value[idx] = updated
 
-    // Sem snapshot anterior em memoria, nao ha como calcular diferenca de saldo com seguranca.
-    if (!oldSnapshot) return updated
+      // Sem snapshot anterior em memoria, nao ha como calcular diferenca de saldo com seguranca.
+      if (!oldSnapshot) return updated
 
-    const accountsStore = useAccountsStore()
+      const accountsStore = useAccountsStore()
 
-    // Reverte o impacto antigo e aplica o impacto novo por conta.
-    const oldDeltas = collectAppliedAccountDeltas(oldSnapshot)
-    const newDeltas = collectAppliedAccountDeltas(updated)
-    const netDeltas = new Map<number, number>()
+      // Reverte o impacto antigo e aplica o impacto novo por conta.
+      const oldDeltas = collectAppliedAccountDeltas(oldSnapshot)
+      const newDeltas = collectAppliedAccountDeltas(updated)
+      const netDeltas = new Map<number, number>()
 
-    for (const [accountId, delta] of oldDeltas) {
-      addAccountDelta(netDeltas, accountId, -delta)
-    }
-    for (const [accountId, delta] of newDeltas) {
-      addAccountDelta(netDeltas, accountId, delta)
-    }
+      for (const [accountId, delta] of oldDeltas) {
+        addAccountDelta(netDeltas, accountId, -delta)
+      }
+      for (const [accountId, delta] of newDeltas) {
+        addAccountDelta(netDeltas, accountId, delta)
+      }
 
-    const label = updated.description
-      || oldSnapshot.description
-      || (updated.type === 'transfer' || oldSnapshot.type === 'transfer' ? 'Transferencia' : 'Transacao')
+      const label = updated.description
+        || oldSnapshot.description
+        || (updated.type === 'transfer' || oldSnapshot.type === 'transfer' ? 'Transferencia' : 'Transacao')
 
-    for (const [accountId, delta] of netDeltas) {
-      if (delta === 0) continue
-      await accountsStore.adjustBalance(accountId, delta, `Ajuste edicao - ${label}`)
-    }
+      for (const [accountId, delta] of netDeltas) {
+        if (delta === 0) continue
+        await accountsStore.adjustBalance(accountId, delta, `Ajuste edicao - ${label}`)
+      }
 
-    return updated
+      return updated
+    })
   }
 
   function isPaidCreditTransaction(tx: Transaction) {
@@ -556,7 +623,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
         reversalDeltas,
         () => `Estorno exclusao grupo - ${groupLabel}`,
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       let rollbackApplied = true
       await Promise.all(parcelasSnapshots.map(async (snapshot) => {
         try {
@@ -572,7 +639,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
       throw createAtomicOperationError({
         stage: 'reverse_group_balance',
-        message: error?.message || 'Falha ao recompor saldo na exclusao do grupo de parcelas.',
+        message: getErrorMessage(error, 'Falha ao recompor saldo na exclusao do grupo de parcelas.'),
         rollbackApplied,
       })
     }
@@ -598,3 +665,5 @@ export const useTransactionsStore = defineStore('transactions', () => {
     creditInvoicesByAccount,
   }
 })
+
+

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeftRight, Plus } from 'lucide-vue-next'
-import type { Transaction, Recurrent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent } from '~~/schemas/zod-schemas'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useTransactionsStore } from '~/stores/useTransactions'
 import { useRecurrentsStore } from '~/stores/useRecurrents'
@@ -241,3 +241,4 @@ watch(
     </template>
   </div>
 </template>
+

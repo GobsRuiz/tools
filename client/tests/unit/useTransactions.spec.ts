@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useTransactionsStore } from '~/stores/useTransactions'
-import { apiDeleteMock, getMockDb, resetMockApi } from '../helpers/mockApi'
+import { apiDeleteMock, apiPatchMock, apiPostMock, getMockDb, resetMockApi } from '../helpers/mockApi'
 
 describe('useTransactionsStore', () => {
   beforeEach(() => {
@@ -270,6 +270,70 @@ describe('useTransactionsStore', () => {
 
     expect(accountsStore.accounts.find(a => a.id === 1)?.balance_cents).toBe(8000)
     expect(accountsStore.accounts.find(a => a.id === 2)?.balance_cents).toBe(5000)
+  })
+
+  it('updateTransaction serializa updates concorrentes no mesmo id e preserva saldo final correto', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 9000 },
+      ],
+      transactions: [
+        {
+          id: 'tx-concurrent',
+          accountId: 1,
+          date: '2026-02-20',
+          type: 'expense',
+          payment_method: 'debit',
+          amount_cents: -1000,
+          description: 'Despesa concorrente',
+          paid: true,
+          installment: null,
+          createdAt: '2026-02-20',
+        },
+      ],
+      history: [],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta A', bank: 'Banco X', balance_cents: 9000 } as any,
+    ]
+    const adjustSpy = vi.spyOn(accountsStore, 'adjustBalance')
+
+    const transactionsStore = useTransactionsStore()
+    transactionsStore.transactions = cloneTransactions(getMockDb().transactions)
+
+    const basePatch = apiPatchMock.getMockImplementation()
+    if (!basePatch) {
+      throw new Error('apiPatchMock sem implementacao padrao para o teste')
+    }
+
+    let releaseFirstPatch!: () => void
+    const firstPatchGate = new Promise<void>((resolve) => {
+      releaseFirstPatch = resolve
+    })
+    let txPatchCalls = 0
+
+    apiPatchMock.mockImplementation(async (path: string, body: unknown) => {
+      if (path === '/transactions/tx-concurrent') {
+        txPatchCalls += 1
+        if (txPatchCalls === 1) {
+          await firstPatchGate
+        }
+      }
+      return basePatch(path, body)
+    })
+
+    const firstUpdate = transactionsStore.updateTransaction('tx-concurrent', { amount_cents: -1500 })
+    const secondUpdate = transactionsStore.updateTransaction('tx-concurrent', { amount_cents: -700 })
+
+    releaseFirstPatch()
+    await Promise.all([firstUpdate, secondUpdate])
+
+    expect(txPatchCalls).toBe(2)
+    expect(adjustSpy).toHaveBeenCalledTimes(2)
+    expect(transactionsStore.transactions.find(tx => tx.id === 'tx-concurrent')?.amount_cents).toBe(-700)
+    expect(accountsStore.accounts.find(account => account.id === 1)?.balance_cents).toBe(9300)
   })
 
   it('evita ajuste duplicado em markPaid com chamadas concorrentes', async () => {
@@ -750,6 +814,111 @@ describe('useTransactionsStore', () => {
     expect(accountsStore.accounts[0]?.balance_cents).toBe(10000)
   })
 
+  it('generateInstallments deduplica chamadas concorrentes com mesmo payload', async () => {
+    resetMockApi({
+      accounts: [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 10000 }],
+      transactions: [],
+      history: [],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 10000 } as any]
+    const adjustSpy = vi.spyOn(accountsStore, 'adjustBalance')
+
+    const transactionsStore = useTransactionsStore()
+
+    let releaseFirstPost!: () => void
+    const postGate = new Promise<void>((resolve) => {
+      releaseFirstPost = resolve
+    })
+    const basePost = apiPostMock.getMockImplementation()
+    if (!basePost) {
+      throw new Error('apiPostMock sem implementacao padrao para o teste')
+    }
+    let txPostCount = 0
+    apiPostMock.mockImplementation(async (path: string, body: unknown) => {
+      if (path === '/transactions') {
+        txPostCount += 1
+        if (txPostCount === 1) {
+          await postGate
+        }
+      }
+      return basePost(path, body)
+    })
+
+    const payload = {
+      accountId: 1,
+      date: '2026-03-10',
+      type: 'expense' as const,
+      payment_method: 'debit' as const,
+      totalAmountCents: -10000,
+      installmentAmountCents: -3333,
+      description: 'Compra parcelada',
+      product: 'Produto',
+      totalInstallments: 3,
+    }
+
+    const firstCall = transactionsStore.generateInstallments(payload)
+    const secondCall = transactionsStore.generateInstallments(payload)
+
+    releaseFirstPost()
+    const [first, second] = await Promise.all([firstCall, secondCall])
+
+    expect(first.map(tx => tx.id)).toEqual(second.map(tx => tx.id))
+    expect(txPostCount).toBe(3)
+    expect(transactionsStore.transactions).toHaveLength(3)
+    expect(adjustSpy).toHaveBeenCalledTimes(1)
+    expect(accountsStore.accounts[0]?.balance_cents).toBe(6667)
+  })
+
+  it('generateInstallments libera lock apos falha e permite retry com sucesso', async () => {
+    resetMockApi({
+      accounts: [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 10000 }],
+      transactions: [],
+      history: [],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 10000 } as any]
+
+    const transactionsStore = useTransactionsStore()
+
+    const basePost = apiPostMock.getMockImplementation()
+    if (!basePost) {
+      throw new Error('apiPostMock sem implementacao padrao para o teste')
+    }
+
+    let failedOnce = false
+    apiPostMock.mockImplementation(async (path: string, body: unknown) => {
+      if (!failedOnce && path === '/transactions') {
+        failedOnce = true
+        throw new Error('falha post parcelas')
+      }
+      return basePost(path, body)
+    })
+
+    const payload = {
+      accountId: 1,
+      date: '2026-03-10',
+      type: 'expense' as const,
+      payment_method: 'debit' as const,
+      totalAmountCents: -10000,
+      installmentAmountCents: -3333,
+      description: 'Compra parcelada retry',
+      product: 'Produto Retry',
+      totalInstallments: 3,
+    }
+
+    await expect(transactionsStore.generateInstallments(payload)).rejects.toThrow('falha post parcelas')
+    expect(transactionsStore.transactions).toHaveLength(0)
+    expect(getMockDb().transactions).toHaveLength(0)
+
+    const created = await transactionsStore.generateInstallments(payload)
+    expect(created).toHaveLength(3)
+    expect(transactionsStore.transactions).toHaveLength(3)
+    expect(accountsStore.accounts[0]?.balance_cents).toBe(6667)
+  })
+
   describe('creditInvoicesByAccount', () => {
     // Conta com closing_day=3: compras antes do dia 3 caem no ciclo do proprio mes.
     // tx-unpaid: date='2026-02-01' → ciclo '2026-02', paid=false
@@ -1065,6 +1234,116 @@ describe('useTransactionsStore', () => {
       expect(transactionsStore.transactions).toHaveLength(1)
       // Saldo deve ter sido ajustado apenas uma vez
       expect(accountsStore.accounts[0]?.balance_cents).toBe(30000)
+    })
+
+    it('chamadas concorrentes com mesmo recorrente e mes nao duplicam criacao nem ajuste de saldo', async () => {
+      resetMockApi({
+        accounts: [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 50000 }],
+        transactions: [],
+        history: [],
+      })
+
+      const accountsStore = useAccountsStore()
+      accountsStore.accounts = [
+        { id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 50000 } as any,
+      ]
+      const adjustSpy = vi.spyOn(accountsStore, 'adjustBalance')
+
+      const transactionsStore = useTransactionsStore()
+      transactionsStore.transactions = []
+
+      let releasePost!: () => void
+      const postGate = new Promise<void>((resolve) => {
+        releasePost = resolve
+      })
+      const basePost = apiPostMock.getMockImplementation()
+      if (!basePost) {
+        throw new Error('apiPostMock sem implementacao padrao para o teste')
+      }
+      let postTransactionsCount = 0
+      apiPostMock.mockImplementation(async (path: string, body: unknown) => {
+        if (path === '/transactions') {
+          postTransactionsCount += 1
+          if (postTransactionsCount === 1) {
+            await postGate
+          }
+        }
+        return basePost(path, body)
+      })
+
+      const rec = {
+        id: 'rec-debit-concurrent',
+        accountId: 1,
+        kind: 'expense',
+        payment_method: 'debit',
+        notify: true,
+        name: 'Aluguel',
+        amount_cents: -20000,
+        frequency: 'monthly',
+        due_day: 10,
+        day_of_month: undefined,
+        description: 'Aluguel mensal',
+        active: true,
+      } as any
+
+      const firstCall = transactionsStore.payRecurrent(rec, '2026-02')
+      const secondCall = transactionsStore.payRecurrent(rec, '2026-02')
+
+      releasePost()
+      const [first, second] = await Promise.all([firstCall, secondCall])
+
+      expect(first.id).toBe(second.id)
+      expect(postTransactionsCount).toBe(1)
+      expect(adjustSpy).toHaveBeenCalledTimes(1)
+      expect(transactionsStore.transactions).toHaveLength(1)
+      expect(accountsStore.accounts[0]?.balance_cents).toBe(30000)
+    })
+
+    it('payRecurrent libera lock apos falha e permite nova tentativa', async () => {
+      resetMockApi({
+        accounts: [{ id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 50000 }],
+        transactions: [],
+        history: [],
+      })
+
+      const accountsStore = useAccountsStore()
+      accountsStore.accounts = [
+        { id: 1, label: 'Conta', bank: 'Banco X', balance_cents: 50000 } as any,
+      ]
+      const adjustSpy = vi.spyOn(accountsStore, 'adjustBalance')
+        .mockRejectedValueOnce(new Error('falha ajuste tentativa 1'))
+        .mockImplementation(async (accountId: number, deltaCents: number) => {
+          const account = accountsStore.accounts.find(item => item.id === accountId)
+          if (account) account.balance_cents += deltaCents
+        })
+
+      const transactionsStore = useTransactionsStore()
+      transactionsStore.transactions = []
+
+      const rec = {
+        id: 'rec-retry',
+        accountId: 1,
+        kind: 'expense',
+        payment_method: 'debit',
+        notify: true,
+        name: 'Condominio',
+        amount_cents: -10000,
+        frequency: 'monthly',
+        due_day: 10,
+        day_of_month: undefined,
+        description: 'Condominio mensal',
+        active: true,
+      } as any
+
+      await expect(transactionsStore.payRecurrent(rec, '2026-03')).rejects.toThrow('falha ajuste tentativa 1')
+      expect(transactionsStore.transactions).toHaveLength(0)
+      expect(getMockDb().transactions).toHaveLength(0)
+
+      const retried = await transactionsStore.payRecurrent(rec, '2026-03')
+      expect(retried.recurrentId).toBe('rec-retry')
+      expect(adjustSpy).toHaveBeenCalledTimes(2)
+      expect(transactionsStore.transactions).toHaveLength(1)
+      expect(accountsStore.accounts[0]?.balance_cents).toBe(40000)
     })
   })
 

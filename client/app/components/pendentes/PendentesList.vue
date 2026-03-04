@@ -11,12 +11,13 @@ import {
   Repeat,
   Receipt,
 } from 'lucide-vue-next'
-import type { Transaction, Recurrent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent } from '~~/schemas/zod-schemas'
 import { useTransactionsStore } from '~/stores/useTransactions'
 import { useRecurrentsStore } from '~/stores/useRecurrents'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useAppToast } from '~/composables/useAppToast'
 import { hasCompleteCreditCardConfig } from '~/utils/account-credit'
+import { getErrorMessage } from '~/utils/error'
 import { formatCentsToBRL } from '~/utils/money'
 import { isPendingDebitExpenseTransactionForMonth } from '~/utils/pending-transactions'
 
@@ -134,7 +135,9 @@ const faturas = computed<FaturaGroup[]>(() => {
   for (const [accountId, txs] of invoiceMap) {
     if (filterConta.value && accountId !== filterConta.value) continue
     const account = accountsStore.accounts.find(a => a.id === accountId)
+    if (!account) continue
     if (!hasCompleteCreditCardConfig(account)) continue
+    if (!Number.isInteger(account.card_due_day)) continue
     const transactions = [...txs].sort((a, b) => a.date.localeCompare(b.date))
     const paidCents = transactions.filter(tx => tx.paid).reduce((s, tx) => s + Math.abs(tx.amount_cents), 0)
     const openCents = transactions.filter(tx => !tx.paid).reduce((s, tx) => s + Math.abs(tx.amount_cents), 0)
@@ -344,11 +347,11 @@ async function payFatura(fatura: FaturaGroup) {
       title: 'Fatura paga',
       description: `${openTransactions.length} compra(s) marcada(s) como paga(s).`,
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     closePayFaturaModal()
     appToast.error({
       title: 'Erro ao pagar fatura',
-      description: e?.message || 'Não foi possível concluir o pagamento da fatura.',
+      description: getErrorMessage(e, 'Nao foi possivel concluir o pagamento da fatura.'),
     })
   } finally {
     payingId.value = null
@@ -365,10 +368,10 @@ async function payTransaction(tx: Transaction) {
       title: 'Pagamento confirmado',
       description: `${getTxLabel(tx)} marcado como pago.`,
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     appToast.error({
       title: 'Erro ao pagar transacao',
-      description: e?.message || 'Não foi possível concluir o pagamento.',
+      description: getErrorMessage(e, 'Nao foi possivel concluir o pagamento.'),
     })
   } finally {
     payingId.value = null
@@ -388,10 +391,10 @@ async function payRecurrent(rec: Recurrent) {
       title: rec.kind === 'income' ? 'Recebimento confirmado' : 'Pagamento confirmado',
       description: `${rec.name} lancado com sucesso.`,
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     appToast.error({
       title: 'Erro ao lançar recorrente',
-      description: e?.message || 'Não foi possível lançar a recorrente.',
+      description: getErrorMessage(e, 'Nao foi possivel lancar a recorrente.'),
     })
   } finally {
     payingId.value = null
@@ -704,3 +707,5 @@ async function payRecurrent(rec: Recurrent) {
     </div>
   </div>
 </template>
+
+

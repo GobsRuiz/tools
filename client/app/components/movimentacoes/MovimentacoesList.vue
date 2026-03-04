@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown, ChevronRight, Filter, ChevronsUpDown, X, MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-vue-next'
-import type { Transaction, Recurrent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent } from '~~/schemas/zod-schemas'
 import { useMovimentacoesState, type MovimentacoesTab } from '~/composables/useMovimentacoesState'
 import { formatCentsToBRL } from '~/utils/money'
 import { getInvestmentEventTypeLabel, getInvestmentEventValueColorClass } from '~/utils/investment-events'
@@ -18,18 +18,20 @@ const emit = defineEmits<{
 }>()
 
 const {
+  accountsStore, investmentPositionsStore,
   txFiltersOpen, recFiltersOpen, invFiltersOpen,
   activeTab,
   txFilterConta, txFilterMes, txFilterStatus,
   recFilterConta, recFilterStatus,
   invFilterConta,
   investmentEventDialogOpen, editingInvestmentEvent,
+  savingInvestmentEvent,
   investmentEventForm, investmentEventTypeOptions,
-  availableSellQuantity,
+  availableSellQuantity, selectedInvestmentPosition,
   expandedParents,
   viewingTransaction, transactionViewDialogOpen,
   viewingRecurrent, recurrentViewDialogOpen,
-  isProcessing,
+  isProcessing, processingAction,
   showDeleteInstallmentModal,
   deleteInstallmentProgress, deleteInstallmentTotal,
   deleteInstallmentPercent, deleteInstallmentCurrentStep,
@@ -57,7 +59,7 @@ const {
   toggleExpand,
   openViewTransaction, openViewRecurrent,
   editTransaction, editRecurrent,
-  requestDeleteTransaction,
+  requestDelete, requestDeleteTransaction,
   markTransactionUnpaid,
   openEditInvestmentEvent,
   onInvestmentEventDialogOpenChange,
@@ -103,7 +105,7 @@ defineExpose({
           </TabsTrigger>
         </TabsList>
 
-        <!-- ═══ TAB TRANSAÇÕES ═══ -->
+        <!-- �?�?�? TAB TRANSAÇÕES �?�?�? -->
         <TabsContent value="transacoes">
           <!-- Filtros Transações -->
           <Collapsible v-model:open="txFiltersOpen" class="mb-4">
@@ -290,7 +292,7 @@ defineExpose({
           </p>
         </TabsContent>
 
-        <!-- ═══ TAB RECORRENTES ═══ -->
+        <!-- �?�?�? TAB RECORRENTES �?�?�? -->
         <TabsContent value="recorrentes">
           <!-- Filtros Recorrentes -->
           <Collapsible v-model:open="recFiltersOpen" class="mb-4">
@@ -449,7 +451,7 @@ defineExpose({
           </p>
         </TabsContent>
 
-        <!-- ═══ TAB INVESTIMENTOS ═══ -->
+        <!-- �?�?�? TAB INVESTIMENTOS �?�?�? -->
         <TabsContent value="investimentos">
           <!-- Filtros Investimentos -->
           <Collapsible v-model:open="invFiltersOpen" class="mb-4">
@@ -823,3 +825,4 @@ defineExpose({
   />
   </div>
 </template>
+

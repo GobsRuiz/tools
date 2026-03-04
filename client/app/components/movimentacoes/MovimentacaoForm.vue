@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Save } from 'lucide-vue-next'
-import type { Transaction, Recurrent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent } from '~~/schemas/zod-schemas'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useTransactionsStore } from '~/stores/useTransactions'
 import { useRecurrentsStore } from '~/stores/useRecurrents'
@@ -9,6 +9,7 @@ import { useInvestmentEventsStore } from '~/stores/useInvestmentEvents'
 import { useAppToast } from '~/composables/useAppToast'
 import { hasCompleteCreditCardConfig } from '~/utils/account-credit'
 import { createAtomicOperationError } from '~/utils/atomic-error'
+import { getErrorMessage } from '~/utils/error'
 import { parseBRLToCents, formatCentsToBRL } from '~/utils/money'
 import { nowISO } from '~/utils/dates'
 
@@ -516,8 +517,8 @@ async function handleSubmit() {
     }
     resetForms()
     emit('saved')
-  } catch (e: any) {
-    const description = e?.message || 'Ocorreu um erro ao salvar os dados.'
+  } catch (e: unknown) {
+    const description = getErrorMessage(e, 'Ocorreu um erro ao salvar os dados.')
     const title = tipoMovimentacao.value === 'investimento'
       ? 'Erro ao registrar lançamento'
       : tipoMovimentacao.value === 'recorrente'
@@ -592,7 +593,7 @@ async function submitTransacao() {
       await accountsStore.adjustBalance(transferAccountId, transferAmountCents, `Saida transferencia - ${label}`)
       originAdjusted = true
       await accountsStore.adjustBalance(transferDestinationAccountId, -transferAmountCents, `Entrada transferencia - ${label}`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       let rollbackApplied = true
 
       if (originAdjusted) {
@@ -613,7 +614,7 @@ async function submitTransacao() {
 
       throw createAtomicOperationError({
         stage: 'create_transfer',
-        message: error?.message || 'Falha ao criar transferencia.',
+        message: getErrorMessage(error, 'Falha ao criar transferencia.'),
         rollbackApplied,
       })
     }
@@ -698,7 +699,7 @@ async function submitTransacao() {
         txForm.description || 'Transacao',
       )
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     let rollbackApplied = false
     if (createdTx) {
       try {
@@ -711,7 +712,7 @@ async function submitTransacao() {
 
     throw createAtomicOperationError({
       stage: createdTx ? 'adjust_balance' : 'create_transaction',
-      message: error?.message || 'Falha ao salvar transacao.',
+      message: getErrorMessage(error, 'Falha ao salvar transacao.'),
       rollbackApplied,
     })
   }
@@ -1138,5 +1139,8 @@ const recPaymentMethodOptions = [
     </form>
   </Tabs>
 </template>
+
+
+
 
 

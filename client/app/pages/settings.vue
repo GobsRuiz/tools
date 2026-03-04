@@ -327,13 +327,13 @@ async function recomputePositionsAndRefreshStatus(messageOnFailure?: string): Pr
     }
 
     return status
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao recomputar posicoes:', error)
     return buildReloadStatus({
       total: 0,
       succeeded: 0,
       failed: 1,
-      message: error?.message || messageOnFailure || 'Não foi possível recomputar as posições.',
+      message: getErrorMessage(error, messageOnFailure || 'Não foi possível recomputar as posições.'),
     })
   }
 }
@@ -349,13 +349,13 @@ async function reloadAllStores(): Promise<ReloadAllStoresStatus> {
     ])
 
     return await recomputePositionsAndRefreshStatus('Algumas posições podem ter ficado inconsistentes.')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao recarregar stores após operação crítica:', error)
     return buildReloadStatus({
       total: 0,
       succeeded: 0,
       failed: 1,
-      message: error?.message || 'Não foi possível atualizar os dados na tela.',
+      message: getErrorMessage(error, 'Não foi possível atualizar os dados na tela.'),
     })
   }
 }
@@ -414,11 +414,11 @@ async function handleClearAll() {
     const reloadStatus = await reloadAllStores()
     completeProgress()
     notifyReloadStatus('Dados removidos', 'Limpeza de dados concluída.', reloadStatus)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao limpar dados:', error)
     appToast.error({
       title: 'Erro ao limpar dados',
-      description: error?.message || 'Ocorreu um erro ao remover os dados.',
+      description: getErrorMessage(error, 'Ocorreu um erro ao remover os dados.'),
     })
     failProgress()
   } finally {
@@ -448,11 +448,11 @@ async function handleExportJson() {
       title: 'Backup completo exportado',
       description: `Snapshot completo do banco gerado: ${filename}`,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao exportar JSON:', error)
     appToast.error({
       title: 'Falha na exportação',
-      description: error?.message || 'Não foi possível exportar o backup JSON.',
+      description: getErrorMessage(error, 'Não foi possível exportar o backup JSON.'),
     })
     failProgress()
   } finally {
@@ -478,11 +478,11 @@ async function handleImportFileChange(event: Event) {
     pendingImportData.value = data
     pendingImportFileName.value = file.name
     importConfirmOpen.value = true
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao ler backup:', error)
     appToast.error({
       title: 'Arquivo inválido',
-      description: error?.message || 'Não foi possível validar o arquivo selecionado.',
+      description: getErrorMessage(error, 'Não foi possível validar o arquivo selecionado.'),
     })
     resetPendingImport()
   } finally {
@@ -513,11 +513,11 @@ async function confirmImport() {
       `Banco do projeto substituído (${summary.accounts} contas, ${summary.transactions} transações, ${summary.recurrents} recorrentes, ${summary.investmentPositions} posições, ${summary.investmentEvents} eventos).`,
       reloadStatus,
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao importar backup:', error)
     appToast.error({
       title: 'Falha na importação',
-      description: error?.message || 'Não foi possível importar o backup.',
+      description: getErrorMessage(error, 'Não foi possível importar o backup.'),
     })
     failProgress()
   } finally {

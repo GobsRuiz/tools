@@ -164,6 +164,140 @@ describe('useDashboardData', () => {
     expect(dashboard.investmentEvolutionPoints.value.at(-1)?.valueCents).toBe(1800)
   })
 
+  it('investmentSummary calcula PnL, split por bucket e top posicoes', () => {
+    const accountsStore = useAccountsStore()
+    const transactionsStore = useTransactionsStore()
+    const recurrentsStore = useRecurrentsStore()
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+
+    accountsStore.accounts = [{ id: 1, label: 'Corretora', bank: 'B', type: 'bank', balance_cents: 0 } as any]
+    transactionsStore.transactions = []
+    recurrentsStore.recurrents = []
+    eventsStore.events = []
+    positionsStore.positions = [
+      { id: 'p1', bucket: 'variable', asset_code: 'PETR4', invested_cents: 10000, current_value_cents: 13000 } as any,
+      { id: 'p2', bucket: 'fixed', asset_code: 'CDB', invested_cents: 20000, current_value_cents: 21000, principal_cents: 20000 } as any,
+      { id: 'p3', bucket: 'variable', asset_code: 'BOVA11', invested_cents: 5000, current_value_cents: 0 } as any,
+    ]
+
+    const selectedMonth = ref('2026-03')
+    const period = ref<'month' | 'year' | 'all'>('month')
+    const dashboard = useDashboardData(selectedMonth, period)
+    const summary = dashboard.investmentSummary.value
+
+    expect(summary.totalInvestedCents).toBe(35000)
+    expect(summary.totalCurrentCents).toBe(34000)
+    expect(summary.totalPnlCents).toBe(-1000)
+    expect(summary.fixedCurrentCents).toBe(21000)
+    expect(summary.variableCurrentCents).toBe(13000)
+    // p3 fica fora do topPositions pois current=0 e invested=5000 → fica incluida (investedCents>0)
+    expect(summary.topPositions[0]?.label).toBe('CDB')
+    expect(summary.topPositions[1]?.label).toBe('PETR4')
+    // PnL por posicao
+    expect(summary.topPositions[0]?.pnlCents).toBe(1000)
+    expect(summary.topPositions[1]?.pnlCents).toBe(3000)
+  })
+
+  it('latestTransactions retorna no maximo 12 transacoes ordenadas por data desc', () => {
+    const accountsStore = useAccountsStore()
+    const transactionsStore = useTransactionsStore()
+    const recurrentsStore = useRecurrentsStore()
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+
+    accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', type: 'bank', balance_cents: 0 } as any]
+    recurrentsStore.recurrents = []
+    positionsStore.positions = []
+    eventsStore.events = []
+
+    transactionsStore.transactions = Array.from({ length: 15 }, (_, index) => ({
+      id: `tx-${index + 1}`,
+      accountId: 1,
+      date: `2026-03-${String(index + 1).padStart(2, '0')}`,
+      type: 'expense',
+      payment_method: 'debit',
+      amount_cents: -(index + 1) * 100,
+      paid: false,
+      installment: null,
+    })) as any
+
+    const selectedMonth = ref('2026-03')
+    const period = ref<'month' | 'year' | 'all'>('month')
+    const dashboard = useDashboardData(selectedMonth, period)
+
+    expect(dashboard.latestTransactions.value).toHaveLength(12)
+    // ordenado por data desc → primeiro deve ser tx-15 (dia 15)
+    expect(dashboard.latestTransactions.value[0]?.id).toBe('tx-15')
+    expect(dashboard.latestTransactions.value[11]?.id).toBe('tx-4')
+  })
+
+  it('variacoes de entradas e despesas refletem diferenca em relacao ao mes anterior', () => {
+    const accountsStore = useAccountsStore()
+    const transactionsStore = useTransactionsStore()
+    const recurrentsStore = useRecurrentsStore()
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+
+    accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', type: 'bank', balance_cents: 0 } as any]
+    recurrentsStore.recurrents = []
+    positionsStore.positions = []
+    eventsStore.events = []
+    transactionsStore.transactions = [
+      // Mes atual (marco)
+      { id: 'cur-in', accountId: 1, date: '2026-03-05', type: 'income', amount_cents: 30000, paid: true } as any,
+      { id: 'cur-out', accountId: 1, date: '2026-03-10', type: 'expense', payment_method: 'debit', amount_cents: -10000, paid: true } as any,
+      // Mes anterior (fevereiro)
+      { id: 'prev-in', accountId: 1, date: '2026-02-05', type: 'income', amount_cents: 20000, paid: true } as any,
+      { id: 'prev-out', accountId: 1, date: '2026-02-10', type: 'expense', payment_method: 'debit', amount_cents: -15000, paid: true } as any,
+    ]
+
+    const selectedMonth = ref('2026-03')
+    const period = ref<'month' | 'year' | 'all'>('month')
+    const dashboard = useDashboardData(selectedMonth, period)
+
+    // Entradas: 30000 atual vs 20000 anterior → +50% → tone verde
+    expect(dashboard.monthEntriesCents.value).toBe(30000)
+    expect(dashboard.entriesVariation.value.tone).toBe('text-emerald-400')
+    expect(dashboard.entriesVariation.value.label).toContain('+50.0%')
+
+    // Despesas: 10000 atual vs 15000 anterior → -33.3% → invert=true → reducao e verde
+    expect(dashboard.monthExpensesCents.value).toBe(10000)
+    expect(dashboard.expensesVariation.value.tone).toBe('text-emerald-400')
+
+    // Saldo liquido: 30000-10000 = 20000
+    expect(dashboard.monthNetCents.value).toBe(20000)
+  })
+
+  it('transferencias sao excluidas dos calculos de entradas e despesas', () => {
+    const accountsStore = useAccountsStore()
+    const transactionsStore = useTransactionsStore()
+    const recurrentsStore = useRecurrentsStore()
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta A', bank: 'B', type: 'bank', balance_cents: 0 } as any,
+      { id: 2, label: 'Conta B', bank: 'B', type: 'bank', balance_cents: 0 } as any,
+    ]
+    recurrentsStore.recurrents = []
+    positionsStore.positions = []
+    eventsStore.events = []
+    transactionsStore.transactions = [
+      { id: 'income', accountId: 1, date: '2026-03-01', type: 'income', amount_cents: 10000, paid: true } as any,
+      { id: 'transfer', accountId: 1, date: '2026-03-05', type: 'transfer', amount_cents: -5000, paid: true, destinationAccountId: 2 } as any,
+    ]
+
+    const selectedMonth = ref('2026-03')
+    const period = ref<'month' | 'year' | 'all'>('month')
+    const dashboard = useDashboardData(selectedMonth, period)
+
+    // entradas ignora transfer
+    expect(dashboard.monthEntriesCents.value).toBe(10000)
+    // despesas ignora transfer
+    expect(dashboard.monthExpensesCents.value).toBe(0)
+  })
+
   it('helpers de exibicao lidam com dados incompletos/legados sem quebrar', () => {
     const accountsStore = useAccountsStore()
     const transactionsStore = useTransactionsStore()

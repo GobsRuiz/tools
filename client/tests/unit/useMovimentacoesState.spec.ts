@@ -322,4 +322,80 @@ describe('useMovimentacoesState', () => {
     expect(state.recurrentViewDialogOpen.value).toBe(true)
     expect(state.viewingRecurrent.value?.id).toBe('rec-focus')
   })
+
+  it('confirmDelete ignora segunda chamada enquanto exclusao esta em andamento', async () => {
+    const transactionsStore = useTransactionsStore()
+    let resolveDelete!: () => void
+    const pendingDelete = new Promise<void>((resolve) => {
+      resolveDelete = resolve
+    })
+    const deleteSpy = vi.spyOn(transactionsStore, 'deleteTransaction').mockImplementation(() => pendingDelete as any)
+
+    const state = useMovimentacoesState({}, createEmitSpy())
+    state.deleteTarget.value = { type: 'transaction', id: 'tx-1', label: 'Conta de luz' } as any
+    state.confirmDeleteOpen.value = true
+
+    const firstCall = state.confirmDelete()
+    const secondCall = state.confirmDelete()
+
+    expect(state.isProcessing.value).toBe(true)
+    expect(deleteSpy).toHaveBeenCalledTimes(1)
+
+    resolveDelete()
+    await firstCall
+    await secondCall
+
+    expect(deleteSpy).toHaveBeenCalledTimes(1)
+    expect(state.isProcessing.value).toBe(false)
+    expect(state.confirmDeleteOpen.value).toBe(false)
+    expect(state.deleteTarget.value).toBeNull()
+  })
+
+  it('submitInvestmentEvent ignora segundo submit enquanto atualizacao esta em andamento', async () => {
+    const positionsStore = useInvestmentPositionsStore()
+    const eventsStore = useInvestmentEventsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'fixed',
+        investment_type: 'cdb',
+        asset_code: 'CDB-01',
+      },
+    ] as any
+
+    let resolveUpdate!: () => void
+    const pendingUpdate = new Promise<void>((resolve) => {
+      resolveUpdate = resolve
+    })
+    const updateSpy = vi.spyOn(eventsStore, 'updateEvent').mockImplementation(() => pendingUpdate as any)
+
+    const state = useMovimentacoesState({}, createEmitSpy())
+    state.editingInvestmentEvent.value = {
+      id: 'evt-1',
+      positionId: 'pos-1',
+      accountId: 1,
+      date: '2026-03-10',
+      event_type: 'contribution',
+      amount_cents: 1000,
+    } as any
+    state.investmentEventForm.positionId = 'pos-1'
+    state.investmentEventForm.date = '2026-03-10'
+    state.investmentEventForm.event_type = 'contribution'
+    state.investmentEventForm.amount = '10,00'
+
+    const firstSubmit = state.submitInvestmentEvent()
+    const secondSubmit = state.submitInvestmentEvent()
+
+    expect(state.isProcessing.value).toBe(true)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+
+    resolveUpdate()
+    await firstSubmit
+    await secondSubmit
+
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+    expect(state.isProcessing.value).toBe(false)
+    expect(state.investmentEventDialogOpen.value).toBe(false)
+  })
 })

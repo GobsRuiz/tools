@@ -405,6 +405,192 @@ describe('useAlerts', () => {
     })
   })
 
+  describe('recurrentAlerts - regras de exibicao', () => {
+    it('ignora recorrente com notify=false', () => {
+      const accountsStore = useAccountsStore()
+      useTransactionsStore().transactions = []
+      useRecurrentsStore().recurrents = [
+        {
+          id: 'rec-no-notify',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'debit',
+          notify: false,
+          name: 'Conta de agua',
+          amount_cents: -5000,
+          frequency: 'monthly',
+          due_day: 1,
+          active: true,
+        } as any,
+      ]
+      accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', balance_cents: 0 } as any]
+
+      const { allAlerts } = useAlerts()
+      expect(allAlerts.value.filter(a => a.alertType === 'recurrent')).toHaveLength(0)
+    })
+
+    it('ignora recorrente com active=false', () => {
+      const accountsStore = useAccountsStore()
+      useTransactionsStore().transactions = []
+      useRecurrentsStore().recurrents = [
+        {
+          id: 'rec-inactive',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'debit',
+          notify: true,
+          name: 'Streaming',
+          amount_cents: -4000,
+          frequency: 'monthly',
+          due_day: 1,
+          active: false,
+        } as any,
+      ]
+      accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', balance_cents: 0 } as any]
+
+      const { allAlerts } = useAlerts()
+      expect(allAlerts.value.filter(a => a.alertType === 'recurrent')).toHaveLength(0)
+    })
+
+    it('ignora recorrente de despesa com payment_method=credit', () => {
+      const accountsStore = useAccountsStore()
+      useTransactionsStore().transactions = []
+      useRecurrentsStore().recurrents = [
+        {
+          id: 'rec-credit',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'credit',
+          notify: true,
+          name: 'Assinatura cartao',
+          amount_cents: -3000,
+          frequency: 'monthly',
+          due_day: 1,
+          active: true,
+        } as any,
+      ]
+      accountsStore.accounts = [
+        { id: 1, label: 'Cartao', bank: 'B', balance_cents: 0, card_due_day: 5, card_closing_day: 28 } as any,
+      ]
+
+      const { allAlerts } = useAlerts()
+      expect(allAlerts.value.filter(a => a.alertType === 'recurrent')).toHaveLength(0)
+    })
+
+    it('nao gera alerta de recorrente quando ja foi pago no mes da proxima ocorrencia', () => {
+      // Sistema: 2026-02-28. due_day=1 → proxima ocorrencia = 2026-03-01 → cycleMonth='2026-03'
+      // Existe tx paga com recurrentId='rec-1' em '2026-03-01' → deve suprimir o alerta
+      const accountsStore = useAccountsStore()
+      const transactionsStore = useTransactionsStore()
+      const recurrentsStore = useRecurrentsStore()
+
+      accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', balance_cents: 0 } as any]
+      recurrentsStore.recurrents = [
+        {
+          id: 'rec-resolved',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'debit',
+          notify: true,
+          name: 'Luz',
+          amount_cents: -8000,
+          frequency: 'monthly',
+          due_day: 1,
+          active: true,
+        } as any,
+      ]
+      transactionsStore.transactions = [
+        {
+          id: 'tx-resolved',
+          accountId: 1,
+          recurrentId: 'rec-resolved',
+          date: '2026-03-01',
+          type: 'expense',
+          payment_method: 'debit',
+          amount_cents: -8000,
+          paid: true,
+          installment: null,
+        } as any,
+      ]
+
+      const { allAlerts } = useAlerts()
+      expect(allAlerts.value.filter(a => a.alertType === 'recurrent')).toHaveLength(0)
+    })
+
+    it('gera alerta de recorrente de receita usando day_of_month', () => {
+      // Sistema: 2026-02-28. Recorrente de receita com day_of_month=1 → proxima = 2026-03-01 → 1 dia → 'next'
+      const accountsStore = useAccountsStore()
+      useTransactionsStore().transactions = []
+      useRecurrentsStore().recurrents = [
+        {
+          id: 'rec-income',
+          accountId: 1,
+          kind: 'income',
+          payment_method: 'debit',
+          notify: true,
+          name: 'Salario',
+          amount_cents: 500000,
+          frequency: 'monthly',
+          day_of_month: 1,
+          due_day: undefined,
+          active: true,
+        } as any,
+      ]
+      accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', balance_cents: 0 } as any]
+
+      const { allAlerts } = useAlerts()
+      const recAlert = allAlerts.value.find(a => a.alertType === 'recurrent')
+      expect(recAlert).toBeDefined()
+      expect(recAlert?.kind).toBe('income')
+      expect(recAlert?.targetDate).toBe('2026-03-01')
+      expect(recAlert?.bucket).toBe('next')
+    })
+
+    it('counts reflete quantidade correta por bucket', () => {
+      const accountsStore = useAccountsStore()
+      const transactionsStore = useTransactionsStore()
+      const recurrentsStore = useRecurrentsStore()
+
+      // Sistema: 2026-02-28
+      // rec-today: due_day=28 → targetDate='2026-02-28' → bucket='today'
+      // rec-next: due_day=1  → targetDate='2026-03-01' → bucket='next'
+      accountsStore.accounts = [{ id: 1, label: 'Conta', bank: 'B', balance_cents: 0 } as any]
+      transactionsStore.transactions = []
+      recurrentsStore.recurrents = [
+        {
+          id: 'rec-today',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'debit',
+          notify: true,
+          name: 'Hoje',
+          amount_cents: -1000,
+          frequency: 'monthly',
+          due_day: 28,
+          active: true,
+        } as any,
+        {
+          id: 'rec-next',
+          accountId: 1,
+          kind: 'expense',
+          payment_method: 'debit',
+          notify: true,
+          name: 'Amanha',
+          amount_cents: -2000,
+          frequency: 'monthly',
+          due_day: 1,
+          active: true,
+        } as any,
+      ]
+
+      const { counts } = useAlerts()
+      expect(counts.value.today).toBe(1)
+      expect(counts.value.next).toBe(1)
+      expect(counts.value.overdue).toBe(0)
+      expect(counts.value.total).toBe(2)
+    })
+  })
+
   describe('loadAlertSources', () => {
     it('carrega fontes de alerta chamando os 3 stores', async () => {
       const accountsStore = useAccountsStore()

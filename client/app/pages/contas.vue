@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Landmark, Plus, Pencil, Trash2 } from 'lucide-vue-next'
-import type { Account } from '~/schemas/zod-schemas'
+import type { Account } from '~~/schemas/zod-schemas'
 import { useAppToast } from '~/composables/useAppToast'
 import { usePageLoadState } from '~/composables/usePageLoadState'
 import { useAccountsStore } from '~/stores/useAccounts'
@@ -10,6 +10,7 @@ import { hasCompleteCreditCardConfig } from '~/utils/account-credit'
 import { monthKey, nowISO } from '~/utils/dates'
 import { formatCentsToBRL } from '~/utils/money'
 import { getBankIdentity } from '~/utils/bankIdentity'
+import { getErrorMessage } from '~/utils/error'
 
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
@@ -222,10 +223,10 @@ async function confirmDeleteAccount() {
       title: 'Conta excluida',
       description: `${deleted.transactionsDeleted} transação(ões), ${deleted.recurrentsDeleted} recorrente(s), ${deleted.investmentPositionsDeleted} posição(ões) e ${deleted.investmentEventsDeleted} evento(s) removidos.`,
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     appToast.error({
       title: 'Erro ao excluir conta',
-      description: e?.message || 'Não foi possível excluir a conta.',
+      description: getErrorMessage(e, 'Não foi possível excluir a conta.'),
     })
   } finally {
     resetDeleteAccountProgress()
@@ -422,3 +423,4 @@ async function confirmDeleteAccount() {
     </div>
   </div>
 </template>
+

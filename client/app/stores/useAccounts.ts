@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Account, Transaction } from '~/schemas/zod-schemas'
+import type { Account, Transaction } from '~~/schemas/zod-schemas'
 import { assertValidCreditCardPair } from '~/utils/account-credit'
 import { createAtomicOperationError } from '~/utils/atomic-error'
 import { apiAtomic, apiDelete, apiGet, apiPost, apiPatch } from '~/utils/api'
+import { getErrorMessage } from '~/utils/error'
 import { useTransactionsStore } from './useTransactions'
 import { useRecurrentsStore } from './useRecurrents'
 import { useInvestmentPositionsStore } from './useInvestmentPositions'
@@ -11,6 +12,8 @@ import { useInvestmentEventsStore } from './useInvestmentEvents'
 
 export const useAccountsStore = defineStore('accounts', () => {
   const accounts = ref<Account[]>([])
+  const deleteAccountInFlight = new Map<number, Promise<DeleteAccountSummary>>()
+  const balanceUpdateQueue = new Map<number, Promise<void>>()
 
   type CascadeAuditEntry = {
     stage: string
@@ -26,12 +29,14 @@ export const useAccountsStore = defineStore('accounts', () => {
     auditTrail?: CascadeAuditEntry[]
   }
 
+  type SnapshotItem = Record<string, unknown> & { id: string | number }
+
   type CascadeSnapshot = {
-    accounts: Array<Record<string, any>>
-    transactions: Array<Record<string, any>>
-    recurrents: Array<Record<string, any>>
-    investment_positions: Array<Record<string, any>>
-    investment_events: Array<Record<string, any>>
+    accounts: SnapshotItem[]
+    transactions: SnapshotItem[]
+    recurrents: SnapshotItem[]
+    investment_positions: SnapshotItem[]
+    investment_events: SnapshotItem[]
   }
 
   function canUseAtomicIpc() {
@@ -69,12 +74,31 @@ export const useAccountsStore = defineStore('accounts', () => {
   }
 
   async function adjustBalance(accountId: number, deltaCents: number, _note?: string) {
-    const account = accounts.value.find(a => a.id === accountId)
-    if (!account) throw new Error(`Conta ${accountId} não encontrada`)
+    const previous = balanceUpdateQueue.get(accountId) ?? Promise.resolve()
+    let release!: () => void
+    const lock = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const currentTail = previous
+      .catch(() => undefined)
+      .then(() => lock)
+    balanceUpdateQueue.set(accountId, currentTail)
 
-    const newBalance = account.balance_cents + deltaCents
-    await apiPatch(`/accounts/${accountId}`, { balance_cents: newBalance })
-    account.balance_cents = newBalance
+    await previous.catch(() => undefined)
+
+    try {
+      const account = accounts.value.find(a => a.id === accountId)
+      if (!account) throw new Error(`Conta ${accountId} n?o encontrada`)
+
+      const newBalance = account.balance_cents + deltaCents
+      await apiPatch(`/accounts/${accountId}`, { balance_cents: newBalance })
+      account.balance_cents = newBalance
+    } finally {
+      release()
+      if (balanceUpdateQueue.get(accountId) === currentTail) {
+        balanceUpdateQueue.delete(accountId)
+      }
+    }
   }
 
   async function reloadAllStoresAfterCascade() {
@@ -95,11 +119,11 @@ export const useAccountsStore = defineStore('accounts', () => {
       snapshotPositions,
       snapshotEvents,
     ] = await Promise.all([
-      apiGet<Array<Record<string, any>>>('/accounts'),
-      apiGet<Array<Record<string, any>>>('/transactions'),
-      apiGet<Array<Record<string, any>>>('/recurrents'),
-      apiGet<Array<Record<string, any>>>('/investment_positions'),
-      apiGet<Array<Record<string, any>>>('/investment_events'),
+      apiGet<SnapshotItem[]>('/accounts'),
+      apiGet<SnapshotItem[]>('/transactions'),
+      apiGet<SnapshotItem[]>('/recurrents'),
+      apiGet<SnapshotItem[]>('/investment_positions'),
+      apiGet<SnapshotItem[]>('/investment_events'),
     ])
 
     return {
@@ -121,7 +145,7 @@ export const useAccountsStore = defineStore('accounts', () => {
     ] as const
 
     for (const collection of deleteOrder) {
-      const current = await apiGet<Array<Record<string, any>>>(`/${collection}`)
+      const current = await apiGet<SnapshotItem[]>(`/${collection}`)
       await Promise.all(current.map(item => apiDelete(`/${collection}/${item.id}`)))
     }
 
@@ -139,6 +163,10 @@ export const useAccountsStore = defineStore('accounts', () => {
   }
 
   async function deleteAccount(accountId: number, onProgress?: (step: string) => void) {
+    const existing = deleteAccountInFlight.get(accountId)
+    if (existing) return existing
+
+    const operation = (async () => {
     const auditTrail: CascadeAuditEntry[] = []
 
     if (canUseAtomicIpc()) {
@@ -157,8 +185,8 @@ export const useAccountsStore = defineStore('accounts', () => {
           ...deleted,
           auditTrail: [...(deleted.auditTrail ?? []), ...auditTrail],
         }
-      } catch (error: any) {
-        const message = error?.message || 'Falha na exclusao atomica da conta.'
+      } catch (error: unknown) {
+        const message = getErrorMessage(error, 'Falha na exclusao atomica da conta.')
         auditTrail.push({ stage: 'atomic_failed', message })
         throw createAtomicOperationError({
           stage: 'delete_account_cascade',
@@ -271,8 +299,8 @@ export const useAccountsStore = defineStore('accounts', () => {
         investmentEventsDeleted: eventMap.size,
         auditTrail,
       } satisfies DeleteAccountSummary
-    } catch (error: any) {
-      const failureMessage = error?.message || 'Falha ao excluir conta em cascata.'
+    } catch (error: unknown) {
+      const failureMessage = getErrorMessage(error, 'Falha ao excluir conta em cascata.')
       auditTrail.push({ stage: 'failed', message: failureMessage })
 
       let rollbackApplied = false
@@ -290,7 +318,17 @@ export const useAccountsStore = defineStore('accounts', () => {
         rollbackApplied,
       })
     }
+    })()
+
+    deleteAccountInFlight.set(accountId, operation)
+    try {
+      return await operation
+    } finally {
+      deleteAccountInFlight.delete(accountId)
+    }
   }
 
   return { accounts, loadAccounts, addAccount, updateAccount, adjustBalance, deleteAccount }
 })
+
+

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAccountsStore } from '~/stores/useAccounts'
 import { useInvestmentEventsStore } from '~/stores/useInvestmentEvents'
 import { useInvestmentPositionsStore } from '~/stores/useInvestmentPositions'
-import { apiAtomicMock, apiDeleteMock, getMockDb, resetMockApi } from '../helpers/mockApi'
+import { apiAtomicMock, apiDeleteMock, apiPatchMock, getMockDb, resetMockApi } from '../helpers/mockApi'
 
 describe('useInvestmentEventsStore', () => {
   beforeEach(() => {
@@ -554,6 +554,95 @@ describe('useInvestmentEventsStore', () => {
     expect(getMockDb().investment_events.find(event => event.id === 'event-1')?.amount_cents).toBe(10000)
   })
 
+  it('updateEvent serializa updates concorrentes no mesmo evento e preserva saldo final correto', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 10,
+          avg_cost_cents: 1000,
+          invested_cents: 10000,
+        },
+      ],
+      investment_events: [
+        {
+          id: 'event-1',
+          positionId: 'pos-1',
+          accountId: 1,
+          date: '2026-01-01',
+          event_type: 'buy',
+          amount_cents: 10000,
+          quantity: 10,
+        },
+      ],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 } as any,
+    ]
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 10,
+        avg_cost_cents: 1000,
+        invested_cents: 10000,
+      } as any,
+    ]
+
+    let releaseFirstPatch!: () => void
+    const firstPatchGate = new Promise<void>((resolve) => {
+      releaseFirstPatch = resolve
+    })
+    apiPatchMock.mockImplementationOnce(async (path: string, body: any) => {
+      expect(path).toBe('/investment_events/event-1')
+      await firstPatchGate
+      const db = getMockDb()
+      const row = db.investment_events.find(event => event.id === 'event-1')
+      if (!row) throw new Error('evento de teste nao encontrado')
+      Object.assign(row, body)
+      return { ...row }
+    })
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      {
+        id: 'event-1',
+        positionId: 'pos-1',
+        accountId: 1,
+        date: '2026-01-01',
+        event_type: 'buy',
+        amount_cents: 10000,
+        quantity: 10,
+      } as any,
+    ]
+
+    const firstUpdate = eventsStore.updateEvent('event-1', { amount_cents: 12000, quantity: 12 })
+    const secondUpdate = eventsStore.updateEvent('event-1', { amount_cents: 7000, quantity: 7 })
+
+    releaseFirstPatch()
+    await Promise.all([firstUpdate, secondUpdate])
+
+    expect(apiPatchMock.mock.calls.filter(([path]) => path === '/investment_events/event-1')).toHaveLength(2)
+    expect(eventsStore.events.find(event => event.id === 'event-1')?.amount_cents).toBe(7000)
+    expect(accountsStore.accounts.find(account => account.id === 1)?.balance_cents).toBe(93000)
+  })
+
   it('deleteEvent restaura evento quando pós-processamento falha', async () => {
     resetMockApi({
       accounts: [
@@ -627,6 +716,94 @@ describe('useInvestmentEventsStore', () => {
 
     expect(eventsStore.events.map(event => event.id)).toContain('event-1')
     expect(getMockDb().investment_events.map(event => event.id)).toContain('event-1')
+  })
+
+  it('deleteEvent deduplica chamadas concorrentes e evita estorno duplicado', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 10,
+          avg_cost_cents: 1000,
+          invested_cents: 10000,
+        },
+      ],
+      investment_events: [
+        {
+          id: 'event-1',
+          positionId: 'pos-1',
+          accountId: 1,
+          date: '2026-01-01',
+          event_type: 'buy',
+          amount_cents: 10000,
+          quantity: 10,
+        },
+      ],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 } as any,
+    ]
+    const adjustSpy = vi.spyOn(accountsStore, 'adjustBalance')
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 10,
+        avg_cost_cents: 1000,
+        invested_cents: 10000,
+      } as any,
+    ]
+
+    const deleteBase = apiDeleteMock.getMockImplementation()
+    let releaseDelete!: () => void
+    const deleteGate = new Promise<void>((resolve) => {
+      releaseDelete = resolve
+    })
+    apiDeleteMock.mockImplementation(async (path: string) => {
+      if (path === '/investment_events/event-1') {
+        await deleteGate
+      }
+      return deleteBase?.(path) as any
+    })
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      {
+        id: 'event-1',
+        positionId: 'pos-1',
+        accountId: 1,
+        date: '2026-01-01',
+        event_type: 'buy',
+        amount_cents: 10000,
+        quantity: 10,
+      } as any,
+    ]
+
+    const firstDelete = eventsStore.deleteEvent('event-1')
+    const secondDelete = eventsStore.deleteEvent('event-1')
+
+    releaseDelete()
+    await Promise.all([firstDelete, secondDelete])
+
+    expect(apiDeleteMock.mock.calls.filter(([path]) => path === '/investment_events/event-1')).toHaveLength(1)
+    expect(adjustSpy).toHaveBeenCalledTimes(1)
+    expect(eventsStore.events.find(event => event.id === 'event-1')).toBeUndefined()
   })
 
   it('recomputeAllPositions retorna total de sucesso e falha por posição', async () => {
@@ -837,5 +1014,324 @@ describe('useInvestmentEventsStore', () => {
     expect(deletePositionSpy).toHaveBeenCalledWith('pos-1')
     expect(eventsStore.events).toHaveLength(0)
     expect(positionsStore.positions).toHaveLength(0)
+  })
+
+  it('deletePositionCascade deduplica chamadas concorrentes para a mesma posicao', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 0,
+          avg_cost_cents: 0,
+          invested_cents: 0,
+        },
+      ],
+      investment_events: [
+        { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+      ],
+    })
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      } as any,
+    ]
+    const deletePositionBase = positionsStore.deletePosition.bind(positionsStore)
+    let resolveDelete!: () => void
+    const gate = new Promise<void>((resolve) => {
+      resolveDelete = resolve
+    })
+    const deletePositionSpy = vi.spyOn(positionsStore, 'deletePosition').mockImplementation(async (...args: any[]) => {
+      await gate
+      return deletePositionBase(...args)
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      { id: 'e-1', positionId: 'pos-1', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+    ] as any
+
+    const firstCall = eventsStore.deletePositionCascade('pos-1')
+    const secondCall = eventsStore.deletePositionCascade('pos-1')
+    resolveDelete()
+
+    const [firstResult, secondResult] = await Promise.all([firstCall, secondCall])
+    expect(firstResult).toEqual(secondResult)
+    expect(deletePositionSpy).toHaveBeenCalledTimes(1)
+    expect(eventsStore.events).toHaveLength(0)
+  })
+
+  it('updateEvent libera lock apos falha e permite retry com sucesso', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 10,
+          avg_cost_cents: 1000,
+          invested_cents: 10000,
+        },
+      ],
+      investment_events: [
+        {
+          id: 'event-retry',
+          positionId: 'pos-1',
+          accountId: 1,
+          date: '2026-01-01',
+          event_type: 'buy',
+          amount_cents: 10000,
+          quantity: 10,
+        },
+      ],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 } as any,
+    ]
+    vi.spyOn(accountsStore, 'adjustBalance')
+      .mockRejectedValueOnce(new Error('falha ajuste update retry'))
+      .mockImplementation(async (accountId: number, deltaCents: number) => {
+        const account = accountsStore.accounts.find(item => item.id === accountId)
+        if (account) account.balance_cents += deltaCents
+      })
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 10,
+        avg_cost_cents: 1000,
+        invested_cents: 10000,
+      } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      {
+        id: 'event-retry',
+        positionId: 'pos-1',
+        accountId: 1,
+        date: '2026-01-01',
+        event_type: 'buy',
+        amount_cents: 10000,
+        quantity: 10,
+      } as any,
+    ]
+
+    await expect(eventsStore.updateEvent('event-retry', { amount_cents: 8000, quantity: 8 }))
+      .rejects.toMatchObject({ stage: 'update_event_post_process', rollbackApplied: true })
+
+    const retried = await eventsStore.updateEvent('event-retry', { amount_cents: 7000, quantity: 7 })
+    expect(retried.amount_cents).toBe(7000)
+    expect(eventsStore.events.find(event => event.id === 'event-retry')?.amount_cents).toBe(7000)
+  })
+
+  it('deleteEvent libera lock apos falha e permite retry com sucesso', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-1',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 10,
+          avg_cost_cents: 1000,
+          invested_cents: 10000,
+        },
+      ],
+      investment_events: [
+        {
+          id: 'event-delete-retry',
+          positionId: 'pos-1',
+          accountId: 1,
+          date: '2026-01-01',
+          event_type: 'buy',
+          amount_cents: 10000,
+          quantity: 10,
+        },
+      ],
+    })
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 90000 } as any,
+    ]
+    vi.spyOn(accountsStore, 'adjustBalance')
+      .mockRejectedValueOnce(new Error('falha ajuste delete retry'))
+      .mockImplementation(async (accountId: number, deltaCents: number) => {
+        const account = accountsStore.accounts.find(item => item.id === accountId)
+        if (account) account.balance_cents += deltaCents
+      })
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-1',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 10,
+        avg_cost_cents: 1000,
+        invested_cents: 10000,
+      } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      {
+        id: 'event-delete-retry',
+        positionId: 'pos-1',
+        accountId: 1,
+        date: '2026-01-01',
+        event_type: 'buy',
+        amount_cents: 10000,
+        quantity: 10,
+      } as any,
+    ]
+
+    await expect(eventsStore.deleteEvent('event-delete-retry'))
+      .rejects.toMatchObject({ stage: 'delete_event', rollbackApplied: true })
+
+    await eventsStore.deleteEvent('event-delete-retry')
+    expect(eventsStore.events.find(event => event.id === 'event-delete-retry')).toBeUndefined()
+  })
+
+  it('deletePositionCascade libera lock apos falha e permite retry com sucesso', async () => {
+    resetMockApi({
+      accounts: [
+        { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 },
+      ],
+      investment_positions: [
+        {
+          id: 'pos-retry',
+          accountId: 1,
+          bucket: 'variable',
+          asset_code: 'PETR4',
+          name: 'Petrobras',
+          investment_type: 'stock',
+          quantity_total: 0,
+          avg_cost_cents: 0,
+          invested_cents: 0,
+        },
+      ],
+      investment_events: [
+        { id: 'e-retry', positionId: 'pos-retry', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+      ],
+    })
+
+    const positionsStore = useInvestmentPositionsStore()
+    positionsStore.positions = [
+      {
+        id: 'pos-retry',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      } as any,
+    ]
+
+    const deletePositionSpy = vi.spyOn(positionsStore, 'deletePosition')
+      .mockRejectedValueOnce(new Error('falha delete position retry'))
+      .mockResolvedValue(undefined as any)
+
+    const accountsStore = useAccountsStore()
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 } as any,
+    ]
+
+    const eventsStore = useInvestmentEventsStore()
+    eventsStore.events = [
+      { id: 'e-retry', positionId: 'pos-retry', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+    ] as any
+
+    await expect(eventsStore.deletePositionCascade('pos-retry')).rejects.toThrow('falha delete position retry')
+
+    // Retry needs fresh local state because first attempt removed events before failing at position delete.
+    resetMockApi({
+      accounts: [{ id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 }],
+      investment_positions: [{
+        id: 'pos-retry',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      }],
+      investment_events: [
+        { id: 'e-retry', positionId: 'pos-retry', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+      ],
+    })
+    positionsStore.positions = [
+      {
+        id: 'pos-retry',
+        accountId: 1,
+        bucket: 'variable',
+        asset_code: 'PETR4',
+        name: 'Petrobras',
+        investment_type: 'stock',
+        quantity_total: 0,
+        avg_cost_cents: 0,
+        invested_cents: 0,
+      } as any,
+    ]
+    eventsStore.events = [
+      { id: 'e-retry', positionId: 'pos-retry', accountId: 1, date: '2026-01-01', event_type: 'buy', amount_cents: 1000 },
+    ] as any
+    accountsStore.accounts = [
+      { id: 1, label: 'Conta 1', bank: 'Banco X', balance_cents: 100000 } as any,
+    ]
+
+    const result = await eventsStore.deletePositionCascade('pos-retry')
+    expect(result).toEqual({ deleted: 1, total: 1 })
+    expect(deletePositionSpy).toHaveBeenCalledTimes(2)
   })
 })

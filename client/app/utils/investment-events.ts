@@ -1,4 +1,4 @@
-import type { InvestmentEvent, InvestmentPosition } from '~/schemas/zod-schemas'
+﻿import type { InvestmentEvent, InvestmentPosition } from '~~/schemas/zod-schemas'
 
 export const investmentEventTypeOptionsVariable = [
   { label: 'Compra', value: 'buy' },
@@ -56,4 +56,5 @@ export function getEffectiveAvailableQuantityForSell(
 
   return Math.max(0, available)
 }
+
 

@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { v4 as uuid } from 'uuid'
-import type { InvestmentPosition } from '~/schemas/zod-schemas'
+import type { InvestmentPosition } from '~~/schemas/zod-schemas'
 import { apiGet, apiPost, apiPatch, apiDelete } from '~/utils/api'
 
 export const useInvestmentPositionsStore = defineStore('investment-positions', () => {
@@ -34,3 +34,4 @@ export const useInvestmentPositionsStore = defineStore('investment-positions', (
 
   return { positions, loadPositions, addPosition, updatePosition, deletePosition }
 })
+

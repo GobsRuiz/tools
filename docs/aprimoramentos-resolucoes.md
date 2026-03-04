@@ -45,59 +45,70 @@ Use este modelo para novas entradas:
 
 ## EXECUTAR
 
-### [ ] 107. Remover uso de `any` em stores/composables/componentes sem alterar regra de negócio
+### [x] 108. Corrigir textos com mojibake (encoding quebrado) no app
 
 **Problema**
-- O projeto ainda possui vários pontos com `any` em camadas críticas (stores, composables e componentes).
-- Isso reduz segurança de tipo e aumenta risco de regressão silenciosa.
+- Alguns textos em português apareciam com caracteres quebrados (`TransaÃ§Ãµes`, `NÃ£o`, etc.).
+- Isso impacta legibilidade e percepção de qualidade da interface.
 
 **Evidência**
-- `catch (error: any)` em fluxos de negócio.
-- `Record<string, any>` em snapshot e dados dinâmicos.
-- Tipos IPC com `<T = any>` em `client/app/types/electron.d.ts`.
-- Uso de `any` em composables de dashboard e investimentos.
+- Ocorrências em componentes/páginas e stores do `client/app`.
+- Exemplos: rótulos de abas, mensagens de erro e comentários.
 
 **Impacto**
-- Menor previsibilidade em manutenção e refactor.
-- Erros de integração aparecem só em runtime.
-- Contratos entre camadas ficam ambíguos.
+- UX prejudicada por textos visualmente incorretos.
+- Maior risco de regressão visual e de interpretação do usuário.
 
 **Correção esperada (aceite)**
-1. Substituir `any` por tipos explícitos nos pontos com contrato conhecido.
-2. Trocar `catch (error: any)` por `unknown` com type guard padrão.
-3. Definir tipos auxiliares para payloads dinâmicos (snapshot, IPC e callbacks).
-4. Manter comportamento funcional idêntico.
-5. Cobrir trechos alterados com testes unitários direcionados.
+1. Remover mojibake nos arquivos afetados do `client/app`.
+2. Preservar textos com acentuação correta (`ç`, `ã`, `é`, etc.).
+3. Não alterar regra de negócio.
 
 **Plano sugerido (incremental)**
-1. Fase 1: Base de tipos
-- Criar utilitários de narrowing de erro (`isErrorLike`, `getErrorMessage`).
-- Ajustar `client/app/types/electron.d.ts` removendo default `any`.
-
-2. Fase 2: Stores críticas
-- `client/app/stores/useTransactions.ts`
-- `client/app/stores/useAccounts.ts`
-- `client/app/stores/useInvestmentEvents.ts`
-
-3. Fase 3: Composables de maior acoplamento
-- `client/app/composables/useInvestmentPageState.ts`
-- `client/app/composables/useMovimentacoesState.ts`
-- `client/app/composables/useDashboardData.ts`
-
-4. Fase 4: Componentes com alto tratamento de erro
-- `client/app/components/movimentacoes/MovimentacaoForm.vue`
-- `client/app/components/pendentes/PendentesList.vue`
-- `client/app/components/contas/AccountFormModal.vue`
-- `client/app/components/movimentacoes/ParcelasExpansion.vue`
+1. Identificar arquivos com padrões de mojibake.
+2. Corrigir encoding apenas onde necessário.
+3. Validar ausência dos padrões corrigidos.
 
 **Regras de qualidade**
-1. Não misturar com mudança visual/UX.
-2. Não alterar fluxo de persistência durante tipagem.
-3. Validar por lotes pequenos e com testes.
-4. Evitar `as any` como atalho.
+1. Não misturar com mudança funcional.
+2. Preservar lógica e assinatura de funções.
+3. Evitar alterações fora do `client/app`.
 
 **Critérios de pronto**
-1. Zero `any` nas camadas de negócio (`stores`, `composables` e tipos IPC).
-2. Erros tratados com `unknown` e narrowing padronizado.
-3. Testes atualizados para os novos contratos tipados.
-4. Documentação técnica atualizada no `README.md` da raiz, se necessário.
+1. Zero ocorrências de mojibake no `client/app`.
+2. Textos em português legíveis na base.
+3. Sem impacto no typecheck e testes.
+
+### [x] 109. Eliminar `any` residual nas páginas (`settings.vue` e `contas.vue`)
+
+**Problema**
+- Ainda existem `catch (error: any)` em páginas do app.
+- Isso mantém brecha de tipagem e tratamento inconsistente de erro.
+
+**Evidência**
+- `client/app/pages/settings.vue` (múltiplos `catch (error: any)`).
+- `client/app/pages/contas.vue` (`catch (e: any)`).
+
+**Impacto**
+- Menor segurança de tipos no fluxo de UI.
+- Possível divergência de padrão em relação às stores/composables.
+
+**Correção esperada (aceite)**
+1. Substituir `any` por `unknown`.
+2. Padronizar leitura da mensagem de erro com utilitário (`getErrorMessage`) ou type guard equivalente.
+3. Manter comportamento visual e funcional atual.
+
+**Plano sugerido (incremental)**
+1. Ajustar `catch` na `settings.vue`.
+2. Ajustar `catch` na `contas.vue`.
+3. Validar com typecheck e testes.
+
+**Regras de qualidade**
+1. Não alterar fluxo de negócio.
+2. Não mudar UX.
+3. Evitar casting forçado.
+
+**Critérios de pronto**
+1. Zero `any` nas páginas citadas.
+2. Erros tratados com `unknown` + narrowing.
+3. Typecheck e testes sem regressão.

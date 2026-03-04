@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { Transaction, Recurrent, InvestmentEvent } from '~/schemas/zod-schemas'
+import type { Transaction, Recurrent, InvestmentEvent } from '~~/schemas/zod-schemas'
 import { useTransactionsStore } from '~/stores/useTransactions'
 import { useRecurrentsStore } from '~/stores/useRecurrents'
 import { useInvestmentPositionsStore } from '~/stores/useInvestmentPositions'
@@ -8,6 +8,7 @@ import { useAccountsStore } from '~/stores/useAccounts'
 import { usePagination } from '~/composables/usePagination'
 import { parseBRLToCents, formatCentsToBRL } from '~/utils/money'
 import { monthKey, nowISO } from '~/utils/dates'
+import { getErrorMessage } from '~/utils/error'
 import {
   formatCentsToPtBrInput,
   formatQuantityPtBr,
@@ -430,10 +431,10 @@ export function useMovimentacoesState(
         title: 'Pagamento desfeito',
         description: `${tx.description || 'Transacao'} marcada como pendente.`,
       })
-    } catch (e: any) {
+    } catch (e: unknown) {
       appToast.error({
         title: 'Erro ao desfazer pagamento',
-        description: e?.message || 'Não foi possível desfazer o pagamento.',
+        description: getErrorMessage(e, 'Nao foi possivel desfazer o pagamento.'),
       })
     } finally {
       processingAction.value = null
@@ -550,8 +551,8 @@ export function useMovimentacoesState(
         await investmentEventsStore.deleteEvent(id)
       }
       appToast.success({ title: 'Excluído com sucesso' })
-    } catch (e: any) {
-      appToast.error({ title: 'Erro ao excluir', description: e.message })
+    } catch (e: unknown) {
+      appToast.error({ title: 'Erro ao excluir', description: getErrorMessage(e, 'Nao foi possivel excluir o item.') })
     } finally {
       closeDeleteInstallmentModal()
       processingAction.value = null
@@ -593,7 +594,7 @@ export function useMovimentacoesState(
         const qty = Number(investmentEventForm.quantity.replace(',', '.'))
         if (!Number.isFinite(qty) || qty <= 0) throw new Error('Informe a quantidade')
         if (investmentEventForm.event_type === 'sell') {
-          const availableQty = getEffectiveAvailableQuantityForSell(position)
+          const availableQty = getEffectiveAvailableQuantityForSell(position, editingInvestmentEvent.value)
           if (qty > availableQty) {
             throw new Error(`Voce possui apenas ${formatQuantityDisplay(availableQty)} cotas`)
           }
@@ -614,10 +615,10 @@ export function useMovimentacoesState(
       await investmentEventsStore.updateEvent(editingInvestmentEvent.value.id, payload)
       appToast.success({ title: 'Lancamento atualizado' })
       investmentEventDialogOpen.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       appToast.error({
         title: 'Erro ao atualizar lancamento',
-        description: e?.message || 'Nao foi possivel atualizar o lancamento.',
+        description: getErrorMessage(e, 'Nao foi possivel atualizar o lancamento.'),
       })
     } finally {
       savingInvestmentEvent.value = false
@@ -685,6 +686,8 @@ export function useMovimentacoesState(
   })
 
   return {
+    // Stores (for template direct use)
+    accountsStore, investmentPositionsStore,
     // Filter state
     txFiltersOpen, recFiltersOpen, invFiltersOpen,
     activeTab,
@@ -693,14 +696,15 @@ export function useMovimentacoesState(
     invFilterConta,
     // Investment event form
     investmentEventDialogOpen, editingInvestmentEvent,
+    savingInvestmentEvent,
     investmentEventForm, investmentEventTypeOptions,
-    availableSellQuantity,
+    availableSellQuantity, selectedInvestmentPosition,
     // Expand state
     expandedParents,
     // View state
     viewingTransaction, transactionViewDialogOpen,
     viewingRecurrent, recurrentViewDialogOpen,
-    isProcessing,
+    isProcessing, processingAction,
     showDeleteInstallmentModal,
     deleteInstallmentProgress, deleteInstallmentTotal,
     deleteInstallmentPercent, deleteInstallmentCurrentStep,
@@ -737,7 +741,7 @@ export function useMovimentacoesState(
     toggleExpand,
     openViewTransaction, openViewRecurrent,
     editTransaction, editRecurrent,
-    requestDeleteTransaction,
+    requestDelete, requestDeleteTransaction,
     markTransactionUnpaid,
     openEditInvestmentEvent,
     onInvestmentEventDialogOpenChange,
@@ -750,3 +754,5 @@ export function useMovimentacoesState(
     focusTransaction, focusRecurrent,
   }
 }
+
+

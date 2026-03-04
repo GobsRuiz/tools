@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { v4 as uuid } from 'uuid'
-import type { Recurrent } from '~/schemas/zod-schemas'
+import type { Recurrent } from '~~/schemas/zod-schemas'
 import { apiGet, apiPost, apiPatch, apiDelete } from '~/utils/api'
 import { CREDIT_CARD_BLANK_MESSAGE, CREDIT_CARD_PAIR_MESSAGE, hasCompleteCreditCardConfig } from '~/utils/account-credit'
 import { useAccountsStore } from './useAccounts'
@@ -54,3 +54,4 @@ export const useRecurrentsStore = defineStore('recurrents', () => {
 
   return { recurrents, loadRecurrents, addRecurrent, updateRecurrent, deleteRecurrent }
 })
+
