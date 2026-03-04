@@ -737,9 +737,14 @@ export function useInvestmentPageState() {
 
   // ── Submit handlers ──
 
+  let loadPageDataInFlight: Promise<void> | null = null
+
   async function loadPageData() {
+    if (loadPageDataInFlight) return loadPageDataInFlight
+
     beginAttempt()
 
+    loadPageDataInFlight = (async () => {
     try {
       const results = await Promise.allSettled(sourceLoaders.map(item => item.load()))
       const failed = new Set<string>()
@@ -791,7 +796,12 @@ export function useInvestmentPageState() {
         totalSources: sourceLoaders.length,
       })
       console.error('Erro inesperado ao carregar investimentos:', error)
+    } finally {
+      loadPageDataInFlight = null
     }
+    })()
+
+    return loadPageDataInFlight
   }
 
   async function submitPosition() {

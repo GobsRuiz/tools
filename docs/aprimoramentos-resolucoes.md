@@ -48,7 +48,7 @@ Use este modelo para novas entradas:
 ### [x] 108. Corrigir textos com mojibake (encoding quebrado) no app
 
 **Problema**
-- Alguns textos em português apareciam com caracteres quebrados (`TransaÃ§Ãµes`, `NÃ£o`, etc.).
+- Alguns textos em português apareciam com caracteres quebrados (`Transações`, `Não`, etc.).
 - Isso impacta legibilidade e percepção de qualidade da interface.
 
 **Evidência**
