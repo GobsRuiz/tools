@@ -1,375 +1,1088 @@
 {
-    "accounts":  [
-                     {
-                         "bank":  "inter",
-                         "label":  "Inter Principal",
-                         "type":  "bank",
-                         "balance_cents":  4950000,
-                         "card_closing_day":  25,
-                         "card_due_day":  31,
-                         "id":  1
-                     },
-                     {
-                         "bank":  "nubank",
-                         "label":  "Nubank Principal",
-                         "type":  "bank",
-                         "balance_cents":  24889,
-                         "card_closing_day":  28,
-                         "card_due_day":  3,
-                         "id":  2
-                     },
-                     {
-                         "bank":  "master",
-                         "label":  "Master Principal",
-                         "type":  "bank",
-                         "balance_cents":  1000000,
-                         "card_closing_day":  27,
-                         "card_due_day":  4,
-                         "id":  3
-                     }
-                 ],
-    "transactions":  [
-                         {
-                             "id":  "e1998ac7-b877-4895-8d0a-3caf4ea7f7e3",
-                             "accountId":  1,
-                             "date":  "2026-02-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  1,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "e95aba71-7d7c-4be9-9bb6-5c32ff37a5e5",
-                             "accountId":  1,
-                             "date":  "2026-03-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  2,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "4347a7ba-f5c0-4d92-92fb-18e6eab9a649",
-                             "accountId":  1,
-                             "date":  "2026-04-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  3,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "bdeff6d8-5319-4bc7-8ba7-918461926c82",
-                             "accountId":  1,
-                             "date":  "2026-05-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  4,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "9565ffe2-7767-4a20-bbbd-bbaf16ad6559",
-                             "accountId":  1,
-                             "date":  "2026-06-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  5,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "ef78e911-36ac-4cc3-8f98-f0a37c66aa2a",
-                             "accountId":  1,
-                             "date":  "2026-07-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  6,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "77d2313d-a539-4d55-971e-948baa23697e",
-                             "accountId":  1,
-                             "date":  "2026-08-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  7,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "4274765f-193f-4cc7-89cd-e44442f977d6",
-                             "accountId":  1,
-                             "date":  "2026-09-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  8,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "c9641ee6-1c90-471f-bf2b-5909d70e57aa",
-                             "accountId":  1,
-                             "date":  "2026-10-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  9,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "4bd69ce3-1146-4c61-a2c8-c7dd5ff7073d",
-                             "accountId":  1,
-                             "date":  "2026-11-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  10,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "b56543eb-6010-452f-8ed0-9e6114e6e620",
-                             "accountId":  1,
-                             "date":  "2026-12-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  11,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "abb7c8ef-5d75-4fa0-981d-ba4b71a98999",
-                             "accountId":  1,
-                             "date":  "2027-01-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -62500,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "c82a72df-1a62-45dc-bad6-10f615ffd0ed",
-                                                 "total":  12,
-                                                 "index":  12,
-                                                 "product":  "Geladeira"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "5f485d38-9412-491d-a533-11ac74b8a895",
-                             "accountId":  2,
-                             "date":  "2026-02-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -25111,
-                             "paid":  true,
-                             "installment":  {
-                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
-                                                 "total":  5,
-                                                 "index":  1,
-                                                 "product":  "Fogão"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "b3d2a21c-24ed-45d2-9cc9-608b86248d40",
-                             "accountId":  2,
-                             "date":  "2026-03-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -25111,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
-                                                 "total":  5,
-                                                 "index":  2,
-                                                 "product":  "Fogão"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "9cb27304-92db-4a07-8d5b-c85766f8372d",
-                             "accountId":  2,
-                             "date":  "2026-04-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -25111,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
-                                                 "total":  5,
-                                                 "index":  3,
-                                                 "product":  "Fogão"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "fd4ae54a-95f5-4b0b-8053-f72aef269004",
-                             "accountId":  2,
-                             "date":  "2026-05-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -25111,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
-                                                 "total":  5,
-                                                 "index":  4,
-                                                 "product":  "Fogão"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "id":  "279b3663-7ec7-4d4d-86ea-1b6f01d75086",
-                             "accountId":  2,
-                             "date":  "2026-06-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -25111,
-                             "paid":  false,
-                             "installment":  {
-                                                 "parentId":  "727494b8-def0-4cf5-807a-e9066b549a3e",
-                                                 "total":  5,
-                                                 "index":  5,
-                                                 "product":  "Fogão"
-                                             },
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "accountId":  1,
-                             "date":  "2026-02-27",
-                             "type":  "expense",
-                             "payment_method":  "debit",
-                             "amount_cents":  -50000,
-                             "description":  "PIX Lulu",
-                             "paid":  true,
-                             "installment":  null,
-                             "id":  "ae21b8c4-dcb6-4acc-9301-775e6e879934",
-                             "createdAt":  "2026-02-27"
-                         },
-                         {
-                             "accountId":  1,
-                             "date":  "2026-02-27",
-                             "type":  "expense",
-                             "payment_method":  "credit",
-                             "amount_cents":  -150000,
-                             "description":  "Mercado",
-                             "paid":  false,
-                             "installment":  null,
-                             "id":  "c5a4fc23-83ec-4f16-ade0-d9c05cd6ad50",
-                             "createdAt":  "2026-02-27"
-                         }
-                     ],
-    "recurrents":  [
-
-                   ],
-    "investment_positions":  [
-                                 {
-                                     "accountId":  1,
-                                     "bucket":  "variable",
-                                     "investment_type":  "fii",
-                                     "asset_code":  "MXRF11",
-                                     "is_active":  true,
-                                     "invested_cents":  0,
-                                     "id":  "a130eea6-06f4-43d3-baeb-fae7731c21e0",
-                                     "quantity_total":  0
-                                 },
-                                 {
-                                     "accountId":  3,
-                                     "bucket":  "fixed",
-                                     "investment_type":  "caixinha",
-                                     "asset_code":  "CAIXINHA",
-                                     "name":  "Dinheiro Guardado",
-                                     "metadata":  {
-                                                      "issuer":  "Master",
-                                                      "indexer":  "CDI",
-                                                      "rate_mode":  "pct_cdi",
-                                                      "rate_percent":  120
-                                                  },
-                                     "is_active":  true,
-                                     "invested_cents":  0,
-                                     "id":  "59769965-3de7-4e49-ad93-97fd88a25929",
-                                     "principal_cents":  0,
-                                     "current_value_cents":  0
-                                 },
-                                 {
-                                     "accountId":  1,
-                                     "bucket":  "variable",
-                                     "investment_type":  "fii",
-                                     "asset_code":  "SCX11",
-                                     "is_active":  true,
-                                     "invested_cents":  0,
-                                     "id":  "582f75e4-7ae6-42a5-b99a-2f3f491747fb",
-                                     "quantity_total":  0
-                                 }
-                             ],
-    "investment_events":  [
-
-                          ]
+  "accounts": [
+    {
+      "bank": "inter",
+      "label": "Inter Principal",
+      "type": "bank",
+      "balance_cents": 98025,
+      "id": 1,
+      "card_closing_day": 31,
+      "card_due_day": 7
+    },
+    {
+      "bank": "bradesco",
+      "label": "Bradesco Principal",
+      "type": "bank",
+      "balance_cents": 0,
+      "id": 2
+    },
+    {
+      "bank": "nubank",
+      "label": "Nubank Principal",
+      "type": "bank",
+      "balance_cents": 0,
+      "id": 3,
+      "card_closing_day": 30,
+      "card_due_day": 6
+    },
+    {
+      "bank": "mercado pago",
+      "label": "Mercado Pago Principal",
+      "type": "bank",
+      "balance_cents": 0,
+      "id": 4,
+      "card_closing_day": 29,
+      "card_due_day": 6
+    },
+    {
+      "bank": "inter",
+      "label": "Inter Empresarial",
+      "type": "bank",
+      "balance_cents": 0,
+      "id": 5
+    }
+  ],
+  "transactions": [
+    {
+      "id": "6b970413-b417-4e34-9bd5-666d5fb25f8c",
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 1,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "1ebe626a-2454-4900-a957-aea21bda6276",
+      "accountId": 1,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 2,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "b053fa1d-f606-4404-aef1-d643cb6a9693",
+      "accountId": 1,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 3,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "2e1d8a26-de30-43f8-a2e1-6f47e48d82ac",
+      "accountId": 1,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 4,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "5489d177-59c6-401c-a199-fb3b956ffec4",
+      "accountId": 1,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 5,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "e5b4416a-f272-4831-a220-2a47860da61f",
+      "accountId": 1,
+      "date": "2026-08-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 6,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "dcad0e47-9b7b-4331-aa83-e53533f16e94",
+      "accountId": 1,
+      "date": "2026-09-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23498,
+      "paid": false,
+      "installment": {
+        "parentId": "750783d3-03bf-45f3-a647-2ce4c1c96c6a",
+        "total": 7,
+        "index": 7,
+        "product": "Cama"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "17c5bf89-fa94-4165-8875-aa7be0bba399",
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -17408,
+      "paid": false,
+      "installment": {
+        "parentId": "cb88f7d7-d8aa-4938-9644-1901ef5562b8",
+        "total": 4,
+        "index": 1,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "f9ca963c-2070-4a21-bf4b-7bbd3ba3e06d",
+      "accountId": 1,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -17408,
+      "paid": false,
+      "installment": {
+        "parentId": "cb88f7d7-d8aa-4938-9644-1901ef5562b8",
+        "total": 4,
+        "index": 2,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "6c8a2857-e431-42b6-99dc-d15a8417bba4",
+      "accountId": 1,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -17408,
+      "paid": false,
+      "installment": {
+        "parentId": "cb88f7d7-d8aa-4938-9644-1901ef5562b8",
+        "total": 4,
+        "index": 3,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "7883dc97-e8fd-481e-a846-90881fa13740",
+      "accountId": 1,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -17408,
+      "paid": false,
+      "installment": {
+        "parentId": "cb88f7d7-d8aa-4938-9644-1901ef5562b8",
+        "total": 4,
+        "index": 4,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "390386ac-b95c-4ac4-a758-dfba7ab8e3b9",
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -11118,
+      "paid": false,
+      "installment": {
+        "parentId": "df0806a2-a87f-4780-8631-17dbc9d77532",
+        "total": 2,
+        "index": 1,
+        "product": "Compras Mercado Pago"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "3dc3ebe4-adb1-40dd-9b56-f4a659266a14",
+      "accountId": 1,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -11118,
+      "paid": false,
+      "installment": {
+        "parentId": "df0806a2-a87f-4780-8631-17dbc9d77532",
+        "total": 2,
+        "index": 2,
+        "product": "Compras Mercado Pago"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "de094104-7b3f-4f2a-bf97-f1871e7899b5",
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -25802,
+      "paid": false,
+      "installment": {
+        "parentId": "28a79b4c-12d8-4fd0-8c4a-66c98d499c74",
+        "total": 2,
+        "index": 1,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "04dc908c-24d5-4571-a65e-147df28d7ae1",
+      "accountId": 1,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -25802,
+      "paid": false,
+      "installment": {
+        "parentId": "28a79b4c-12d8-4fd0-8c4a-66c98d499c74",
+        "total": 2,
+        "index": 2,
+        "product": "Compras Mercado Livre"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -2892,
+      "description": "Compra Lojas 1A99 - Talheres",
+      "paid": false,
+      "installment": null,
+      "id": "53199f8b-c8d7-4e6c-ad79-ec18cedc8a26",
+      "createdAt": "2026-03-04"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -2190,
+      "description": "Pedágio",
+      "paid": false,
+      "installment": null,
+      "id": "49fa4665-5ee8-4a8a-8cf7-72397efe3340",
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "29f14c85-b8da-484b-9142-a19f8834d46a",
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 1,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "00fc6a4e-2027-453e-bf6f-f2e708c254ee",
+      "accountId": 1,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 2,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "60b3df0d-9dde-4b83-ab0f-5c54cf47757e",
+      "accountId": 1,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 3,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "d78ba3c2-cbd7-43c4-b86d-4209ceb6c5e6",
+      "accountId": 1,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 4,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "f77de0ab-27e8-4dcb-b7ca-bcaecc210ea6",
+      "accountId": 1,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 5,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "5e008cff-5f3e-4c72-99d2-e0a2cfa5e3b0",
+      "accountId": 1,
+      "date": "2026-08-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 6,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "8afd9fb7-2266-4cc6-95d0-be035085f755",
+      "accountId": 1,
+      "date": "2026-09-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 7,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "44164e0e-6c6e-4c47-aea1-3f17264f1b79",
+      "accountId": 1,
+      "date": "2026-10-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 8,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "30ef08c7-cf80-47da-8ac8-9ef9289dd135",
+      "accountId": 1,
+      "date": "2026-11-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -10640,
+      "paid": false,
+      "installment": {
+        "parentId": "0297b875-307b-4d71-92f6-77e15a3a13e2",
+        "total": 9,
+        "index": 9,
+        "product": "Fogão"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "315b9218-1953-4c87-870b-19deb15c5f43",
+      "accountId": 3,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 1,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "367d825d-2e7f-402b-b179-60bdfe242b9c",
+      "accountId": 3,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 2,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "27ec5bf9-085f-434f-925b-381985d5befb",
+      "accountId": 3,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 3,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "aaccc298-3483-4419-a0d2-56bbf80f78cb",
+      "accountId": 3,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 4,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "aa558f9e-3872-4b3d-84de-47fcefa6815d",
+      "accountId": 3,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 5,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "3cf9f02a-45ea-4502-a5c3-acdb1437923e",
+      "accountId": 3,
+      "date": "2026-08-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 6,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "6b24261e-63fd-4e3d-b2f8-ce957f4e6ed9",
+      "accountId": 3,
+      "date": "2026-09-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 7,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "51c7a754-5afb-4f25-bec2-54c27a21481d",
+      "accountId": 3,
+      "date": "2026-10-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 8,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "f963e0b9-7384-44a9-918e-9d5656059dd8",
+      "accountId": 3,
+      "date": "2026-11-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -23446,
+      "paid": false,
+      "installment": {
+        "parentId": "c3cc01a2-b8b4-41c1-91db-c875996088d5",
+        "total": 9,
+        "index": 9,
+        "product": "Máquina de Lavar"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "ac89fcdc-19cc-47f3-9707-ecceb20cd547",
+      "accountId": 3,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 1,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "cb44b8de-0099-4421-93a7-08dd264413d2",
+      "accountId": 3,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 2,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "4c75ecbe-4bd4-40a8-9414-ae225742c3c2",
+      "accountId": 3,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 3,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "156ae664-dea5-4d6c-b2bf-649a651f56e3",
+      "accountId": 3,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 4,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "de745baf-de52-4aa8-aca5-d693a88e6988",
+      "accountId": 3,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 5,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "5365dec8-404a-4bf0-950f-ee1b4ffb6b99",
+      "accountId": 3,
+      "date": "2026-08-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 6,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "ba4d95e1-8c45-4cf5-abc1-a74473cb56bf",
+      "accountId": 3,
+      "date": "2026-09-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 7,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "c6ed7f8f-ae7f-46d7-86b6-0a65f267ef37",
+      "accountId": 3,
+      "date": "2026-10-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 8,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "ec68ca95-ca20-493a-bdbf-42db2475b016",
+      "accountId": 3,
+      "date": "2026-11-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 9,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "efdd7526-5543-4c44-8ad3-b077b0b44798",
+      "accountId": 3,
+      "date": "2026-12-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -18308,
+      "paid": false,
+      "installment": {
+        "parentId": "1c97c8a0-59e5-42e0-89ec-3863fcd4dfe1",
+        "total": 10,
+        "index": 10,
+        "product": "Rocket Seat"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "accountId": 4,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -11600,
+      "description": "Compras MC",
+      "paid": false,
+      "installment": null,
+      "id": "bef095b8-6050-4c5b-9976-3bd117c1a501",
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "f7e1b538-a3c1-4f26-92c2-8ae2a6ba55a1",
+      "accountId": 4,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -8880,
+      "paid": false,
+      "installment": {
+        "parentId": "4995d05b-4802-40d2-9037-a9f9ebb7521d",
+        "total": 2,
+        "index": 1,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "307cf965-2add-4472-9aa9-4b8a2820b986",
+      "accountId": 4,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -8880,
+      "paid": false,
+      "installment": {
+        "parentId": "4995d05b-4802-40d2-9037-a9f9ebb7521d",
+        "total": 2,
+        "index": 2,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "982d1b34-235c-42ca-9131-a9a2428afacf",
+      "accountId": 4,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 1,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "b77e6818-61dd-40f4-90cb-2ea858ce0bf0",
+      "accountId": 4,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 2,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "79514238-eb48-417e-98b9-66f22285a9ca",
+      "accountId": 4,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 3,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "3541b827-a245-47e3-9e5a-65de7439a327",
+      "accountId": 4,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 4,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "5090456e-8081-434d-ad86-05ba221981fb",
+      "accountId": 4,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 5,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "cdaea560-7f2c-468f-990d-439095dbd756",
+      "accountId": 4,
+      "date": "2026-08-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 6,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "bc6c618d-39fd-460e-bf95-63506d4d4624",
+      "accountId": 4,
+      "date": "2026-09-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 7,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "fb4f15bc-f685-4bb0-93df-92cab9fd5a81",
+      "accountId": 4,
+      "date": "2026-10-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 8,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "bfada632-e951-4dd2-836a-c3c435720d52",
+      "accountId": 4,
+      "date": "2026-11-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -37900,
+      "paid": false,
+      "installment": {
+        "parentId": "a39080b1-b23f-409c-9900-b041111cee6e",
+        "total": 9,
+        "index": 9,
+        "product": "Geladeira"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "581010be-c2fb-4f1a-b6cb-c212fa2745c8",
+      "accountId": 4,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -9729,
+      "paid": false,
+      "installment": {
+        "parentId": "af1c5873-978a-460e-b4a4-c9819c4a8abd",
+        "total": 5,
+        "index": 1,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "9667c0c0-0219-4123-bdbd-7ccc91610321",
+      "accountId": 4,
+      "date": "2026-04-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -9729,
+      "paid": false,
+      "installment": {
+        "parentId": "af1c5873-978a-460e-b4a4-c9819c4a8abd",
+        "total": 5,
+        "index": 2,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "1ab0f2fd-8ce6-4815-a209-32095476b99c",
+      "accountId": 4,
+      "date": "2026-05-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -9729,
+      "paid": false,
+      "installment": {
+        "parentId": "af1c5873-978a-460e-b4a4-c9819c4a8abd",
+        "total": 5,
+        "index": 3,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "9498ddb6-ba6c-4716-9a27-e4a33296bba9",
+      "accountId": 4,
+      "date": "2026-06-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -9729,
+      "paid": false,
+      "installment": {
+        "parentId": "af1c5873-978a-460e-b4a4-c9819c4a8abd",
+        "total": 5,
+        "index": 4,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    },
+    {
+      "id": "2fb9136e-347d-418f-a831-8077c0d37b0e",
+      "accountId": 4,
+      "date": "2026-07-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -9729,
+      "paid": false,
+      "installment": {
+        "parentId": "af1c5873-978a-460e-b4a4-c9819c4a8abd",
+        "total": 5,
+        "index": 5,
+        "product": "Compras MC"
+      },
+      "createdAt": "2026-03-04"
+    }
+  ],
+  "recurrents": [
+    {
+      "accountId": 5,
+      "kind": "income",
+      "notify": false,
+      "name": "Cantacom Pagamento",
+      "amount_cents": 441017,
+      "frequency": "monthly",
+      "day_of_month": 31,
+      "active": true,
+      "id": "2b599792-f8fe-4f18-b4d2-d38fe594e7af"
+    },
+    {
+      "accountId": 2,
+      "kind": "income",
+      "notify": false,
+      "name": "Pagamento 20% CI&T",
+      "amount_cents": 155760,
+      "frequency": "monthly",
+      "day_of_month": 21,
+      "active": true,
+      "id": "6be682c7-cd6a-4d46-91f1-f722ae435868"
+    },
+    {
+      "accountId": 2,
+      "kind": "income",
+      "notify": false,
+      "name": "Pagamento 80% CI&T",
+      "amount_cents": 323910,
+      "frequency": "monthly",
+      "day_of_month": 5,
+      "active": true,
+      "id": "b4b207d8-0e89-46b9-9f35-0016de40d9d7"
+    },
+    {
+      "accountId": 3,
+      "kind": "expense",
+      "payment_method": "credit",
+      "notify": false,
+      "name": "Icloud Gobs",
+      "amount_cents": -1990,
+      "frequency": "monthly",
+      "due_day": 21,
+      "active": true,
+      "id": "7245c074-2982-49ac-9e1d-665a92a4609c"
+    },
+    {
+      "accountId": 1,
+      "kind": "expense",
+      "payment_method": "debit",
+      "notify": true,
+      "name": "Aluguel",
+      "amount_cents": -142000,
+      "frequency": "monthly",
+      "due_day": 21,
+      "active": true,
+      "id": "b43f9328-9747-4bd1-8fdd-44bb67ffb36f"
+    }
+  ],
+  "investment_positions": [],
+  "investment_events": []
 }

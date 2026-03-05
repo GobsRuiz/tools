@@ -84,8 +84,8 @@ function resetForm() {
   hasManualLabelEdit.value = false
 }
 
-function parseOptionalBillingDay(rawValue: string, fieldLabel: string): number | undefined {
-  const value = rawValue.trim()
+function parseOptionalBillingDay(rawValue: string | number, fieldLabel: string): number | undefined {
+  const value = String(rawValue).trim()
   if (!value) return undefined
   if (!/^\d+$/.test(value)) {
     throw new Error(`${fieldLabel} deve ser um numero inteiro entre 1 e 31`)
