@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently --names \"API,FRONT\" --prefix-colors \"yellow,cyan\" \"npm run mock\" \"npm run client\"",
-    "mock": "json-server --watch db.json --port 3011 --delay 100",
+    "mock": "json-server db.json --port 3011 --delay 100",
     "client": "cd client && npm run dev",
     "typecheck": "cd client && npm run typecheck",
     "electron:dev": "concurrently \"npm run mock\" \"npm run client\" \"wait-on http://localhost:3010 && cd electron && npm run dev\"",
