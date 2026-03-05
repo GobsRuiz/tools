@@ -173,6 +173,10 @@ const recurrentAccounts = computed(() => {
   return accountsWithCreditCard.value
 })
 
+const showRecurringAccountSelect = computed(() =>
+  !(recForm.kind === 'expense' && recForm.payment_method === 'debit'),
+)
+
 // Contas para transferência/débito seguem todas as contas.
 const availableAccounts = computed(() => accountsStore.accounts)
 
@@ -384,6 +388,12 @@ watch(() => [recForm.kind, recForm.payment_method], () => {
     recForm.accountId = null
   }
 })
+
+watch(() => [showRecurringAccountSelect.value, accountsStore.accounts], () => {
+  if (showRecurringAccountSelect.value) return
+  if (recForm.accountId && accountsStore.accounts.some(a => a.id === recForm.accountId)) return
+  recForm.accountId = accountsStore.accounts[0]?.id ?? null
+}, { immediate: true })
 
 // Resetar conta ao trocar método (pode ter ficado conta sem cartão)
 watch(() => txForm.payment_method, (method) => {
@@ -1016,7 +1026,7 @@ const recPaymentMethodOptions = [
             </Select>
           </div>
 
-          <div class="space-y-2">
+          <div v-if="showRecurringAccountSelect" class="space-y-2">
             <Label>Conta *</Label>
               <Select v-model="recForm.accountId">
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>

@@ -4,7 +4,7 @@
       "bank": "inter",
       "label": "Inter Principal",
       "type": "bank",
-      "balance_cents": 98025,
+      "balance_cents": 361117,
       "id": 1,
       "card_closing_day": 31,
       "card_due_day": 7
@@ -1022,6 +1022,102 @@
         "product": "Compras MC"
       },
       "createdAt": "2026-03-04"
+    },
+    {
+      "accountId": 2,
+      "date": "2026-03-05",
+      "type": "income",
+      "amount_cents": 323910,
+      "description": "Pagamento 80% CI&T",
+      "paid": true,
+      "installment": null,
+      "recurrentId": "b4b207d8-0e89-46b9-9f35-0016de40d9d7",
+      "id": "206dc071-8800-4a71-9858-dce7cc400d36",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 2,
+      "destinationAccountId": 1,
+      "date": "2026-03-05",
+      "type": "transfer",
+      "amount_cents": -323910,
+      "description": "Transferencia entre contas",
+      "paid": true,
+      "installment": null,
+      "id": "15a2bb6c-84e7-44e3-8f5c-ac915b6758e4",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-05",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -13349,
+      "description": "Compra MC",
+      "paid": false,
+      "installment": null,
+      "id": "fe52344c-a618-410f-8b10-b858458fda29",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-05",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -17959,
+      "description": "Compra MC",
+      "paid": false,
+      "installment": null,
+      "id": "185fb0a1-2363-4874-abe8-764c84d2457e",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-04",
+      "type": "expense",
+      "payment_method": "credit",
+      "amount_cents": -29436,
+      "description": "Natsumi Sushi",
+      "paid": false,
+      "installment": null,
+      "id": "2e62fad4-86a0-4171-b2a5-8abfcbbd087e",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-05",
+      "type": "expense",
+      "payment_method": "debit",
+      "amount_cents": -1000,
+      "description": "Compra das bracadeiras",
+      "paid": true,
+      "installment": null,
+      "id": "4559c994-4653-48cb-8cd8-52f215a3f390",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-05",
+      "type": "expense",
+      "payment_method": "debit",
+      "amount_cents": -5440,
+      "description": "Mercado Embaré",
+      "paid": true,
+      "installment": null,
+      "id": "aad253fb-dab8-4615-a6c1-11ea2c4e3c73",
+      "createdAt": "2026-03-05"
+    },
+    {
+      "accountId": 1,
+      "date": "2026-03-05",
+      "type": "expense",
+      "payment_method": "debit",
+      "amount_cents": -3387,
+      "description": "Posto Gasolina",
+      "paid": true,
+      "installment": null,
+      "id": "40fef757-969f-4f61-9c5b-ebad251375f8",
+      "createdAt": "2026-03-05"
     }
   ],
   "recurrents": [
@@ -1059,18 +1155,6 @@
       "id": "b4b207d8-0e89-46b9-9f35-0016de40d9d7"
     },
     {
-      "accountId": 3,
-      "kind": "expense",
-      "payment_method": "credit",
-      "notify": false,
-      "name": "Icloud Gobs",
-      "amount_cents": -1990,
-      "frequency": "monthly",
-      "due_day": 21,
-      "active": true,
-      "id": "7245c074-2982-49ac-9e1d-665a92a4609c"
-    },
-    {
       "accountId": 1,
       "kind": "expense",
       "payment_method": "debit",
@@ -1081,8 +1165,179 @@
       "due_day": 21,
       "active": true,
       "id": "b43f9328-9747-4bd1-8fdd-44bb67ffb36f"
+    },
+    {
+      "accountId": 3,
+      "kind": "expense",
+      "payment_method": "credit",
+      "notify": false,
+      "name": "Icloud Lulu",
+      "amount_cents": -590,
+      "frequency": "monthly",
+      "active": true,
+      "id": "fd706da6-9bd2-4112-8018-6d68fda0a871"
+    },
+    {
+      "accountId": 1,
+      "kind": "expense",
+      "payment_method": "credit",
+      "notify": false,
+      "name": "Icloud Gobs",
+      "amount_cents": -1990,
+      "frequency": "monthly",
+      "active": true,
+      "id": "bb2849a0-28e1-4a03-b58f-c931d5fc2157"
     }
   ],
-  "investment_positions": [],
-  "investment_events": []
+  "investment_positions": [
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "MXRF11",
+      "is_active": true,
+      "invested_cents": 77520,
+      "id": "7d78bad2-d6c7-4b48-87d7-a5084fe2386f",
+      "quantity_total": 80,
+      "avg_cost_cents": 969
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "KNRL11",
+      "is_active": true,
+      "invested_cents": 33000,
+      "id": "01ea9d19-c412-4c61-91ed-668fd0bbfc54",
+      "quantity_total": 2,
+      "avg_cost_cents": 16500
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "HGLG11",
+      "is_active": true,
+      "invested_cents": 31610,
+      "id": "935b8824-e924-4910-a19c-0b756ffc6ea9",
+      "quantity_total": 2,
+      "avg_cost_cents": 15805
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "SNC11",
+      "is_active": true,
+      "invested_cents": 8577,
+      "id": "65c0beb1-721d-4d0e-ad5a-322237c87aa2",
+      "quantity_total": 1,
+      "avg_cost_cents": 8577
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "KNSC11",
+      "is_active": true,
+      "invested_cents": 9090,
+      "id": "f887b46c-ffb4-4aa3-95f0-587fa47c6edb",
+      "quantity_total": 10,
+      "avg_cost_cents": 909
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "GGRC11",
+      "is_active": true,
+      "invested_cents": 1004,
+      "id": "6f07c513-5b44-450a-a943-b7c40144e7a5",
+      "quantity_total": 1,
+      "avg_cost_cents": 1004
+    },
+    {
+      "accountId": 1,
+      "bucket": "variable",
+      "investment_type": "fii",
+      "asset_code": "KISU11",
+      "is_active": true,
+      "invested_cents": 710,
+      "id": "a4f837ac-4ae7-47bc-97df-c190a0e775f8",
+      "quantity_total": 1,
+      "avg_cost_cents": 710
+    }
+  ],
+  "investment_events": [
+    {
+      "positionId": "7d78bad2-d6c7-4b48-87d7-a5084fe2386f",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 77520,
+      "quantity": 80,
+      "unit_price_cents": 957,
+      "id": "16c22a7e-0838-4745-963a-57195a5f1850"
+    },
+    {
+      "positionId": "01ea9d19-c412-4c61-91ed-668fd0bbfc54",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 33000,
+      "quantity": 2,
+      "unit_price_cents": 16351,
+      "id": "dfd85f2f-f359-4450-9062-6d9f964d886f"
+    },
+    {
+      "positionId": "935b8824-e924-4910-a19c-0b756ffc6ea9",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 31610,
+      "quantity": 2,
+      "unit_price_cents": 15748,
+      "id": "2479c03e-222c-4777-8276-e5e94a3a98e9"
+    },
+    {
+      "positionId": "65c0beb1-721d-4d0e-ad5a-322237c87aa2",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 8577,
+      "quantity": 1,
+      "unit_price_cents": 8577,
+      "id": "01b2288c-103a-4db5-854e-6747a1250fb5"
+    },
+    {
+      "positionId": "f887b46c-ffb4-4aa3-95f0-587fa47c6edb",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 9090,
+      "quantity": 10,
+      "unit_price_cents": 909,
+      "id": "8f6f06b3-813d-44da-a430-7c52fe142d3e"
+    },
+    {
+      "positionId": "6f07c513-5b44-450a-a943-b7c40144e7a5",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 1004,
+      "quantity": 1,
+      "unit_price_cents": 1004,
+      "id": "21bc3b2d-4ecb-46d1-aa15-973c0d513173"
+    },
+    {
+      "positionId": "a4f837ac-4ae7-47bc-97df-c190a0e775f8",
+      "accountId": 1,
+      "date": "2026-03-05",
+      "event_type": "buy",
+      "amount_cents": 710,
+      "quantity": 1,
+      "unit_price_cents": 710,
+      "id": "16b76040-7b1a-46ab-b01b-f190066e8c28"
+    }
+  ]
 }
